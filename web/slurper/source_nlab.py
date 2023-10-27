@@ -1,9 +1,9 @@
-import requests
-from django.db.utils import IntegrityError
-from typing import Optional
 import logging
+from typing import Optional
 
+import requests
 from concepts.models import Item
+from django.db.utils import IntegrityError
 
 SPARQL_URL = 'https://query.wikidata.org/sparql'
 

@@ -1,7 +1,7 @@
-from django.http import Http404
-from django.http import HttpResponse
-from django.template import loader
 from concepts.models import Item
+from django.http import Http404, HttpResponse
+from django.template import loader
+
 
 def index(request, item_id):
     try:

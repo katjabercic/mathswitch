@@ -1,6 +1,6 @@
-import requests
 from typing import Optional
 
+import requests
 from concept import Concept
 
 id1 = 'Q11518'
