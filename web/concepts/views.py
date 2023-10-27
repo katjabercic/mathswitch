@@ -10,11 +10,11 @@ def index(request, item_id):
         raise Http404("Item does not exist")
     template = loader.get_template("detail.html")
     context = {
-        'item': {
-            'identifier': item.identifier,
-            'name': item.name,
-            'description': item.description,
-            'url': item.url
+        "item": {
+            "identifier": item.identifier,
+            "name": item.name,
+            "description": item.description,
+            "url": item.url,
         }
     }
     return HttpResponse(template.render(context, request))

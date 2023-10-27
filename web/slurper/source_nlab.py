@@ -5,7 +5,7 @@ import requests
 from concepts.models import Item
 from django.db.utils import IntegrityError
 
-SPARQL_URL = 'https://query.wikidata.org/sparql'
+SPARQL_URL = "https://query.wikidata.org/sparql"
 
 NLAB_WD_QUERY = """
 SELECT
@@ -24,4 +24,3 @@ WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 """
-

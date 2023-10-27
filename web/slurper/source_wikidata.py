@@ -5,15 +5,15 @@ import requests
 from concepts.models import Item
 from django.db.utils import IntegrityError
 
-API_URL = 'https://www.wikidata.org/w/api.php'
-SPARQL_URL = 'https://query.wikidata.org/sparql'
+API_URL = "https://www.wikidata.org/w/api.php"
+SPARQL_URL = "https://query.wikidata.org/sparql"
 
 PROPERTY = {
-    'IMAGE': 'P18',
-    'MATHWORLD_ID': 'P2812',
-    'ENCYCLOPEDIA_OF_OF_MATHEMATICS_ID': 'P7554',
-    'NLAB_ID': 'P4215',
-    'PROOFWIKI_ID': 'P6781'
+    "IMAGE": "P18",
+    "MATHWORLD_ID": "P2812",
+    "ENCYCLOPEDIA_OF_OF_MATHEMATICS_ID": "P7554",
+    "NLAB_ID": "P4215",
+    "PROOFWIKI_ID": "P6781",
 }
 
 MATH_QUERY = """
@@ -49,33 +49,36 @@ WHERE {
 }
 """
 
+
 def fetch_json(query):
     response = requests.get(
-        SPARQL_URL, 
-        params={
-            'format': 'json',
-            'query': query
-        }, )
-    return response.json()['results']['bindings']
+        SPARQL_URL,
+        params={"format": "json", "query": query},
+    )
+    return response.json()["results"]["bindings"]
 
 
 def json_to_item(item) -> Optional[Item]:
-    url = item['item']['value']
-    identifier = url.split('/')[-1]
-    name = item['itemLabel']['value'] if ('itemLabel' in item) else None
-    description = item['itemDescription']['value'] if ('itemDescription' in item) else None
-    return Item(
-        source = Item.Source.WIKIDATA,
-        identifier = identifier,
-        url = url,
-        name = name,
-        description = description,
+    url = item["item"]["value"]
+    identifier = url.split("/")[-1]
+    name = item["itemLabel"]["value"] if ("itemLabel" in item) else None
+    description = (
+        item["itemDescription"]["value"] if ("itemDescription" in item) else None
     )
+    return Item(
+        source=Item.Source.WIKIDATA,
+        identifier=identifier,
+        url=url,
+        name=name,
+        description=description,
+    )
+
 
 def fetch_items(query):
     json = fetch_json(query)
     for json_item in json:
         yield json_to_item(json_item)
+
 
 def save_items(query):
     for item in fetch_items(query):
