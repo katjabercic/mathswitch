@@ -1,14 +1,9 @@
 from concepts.models import Item
-from django.http import Http404, HttpResponse
-from django.template import loader
+from django.shortcuts import get_object_or_404, render
 
 
 def index(request, item_id):
-    try:
-        item = Item.objects.get(identifier=item_id)
-    except Item.DoesNotExist:
-        raise Http404("Item does not exist")
-    template = loader.get_template("detail.html")
+    item = get_object_or_404(Item, identifier=item_id)
     context = {
         "item": {
             "identifier": item.identifier,
@@ -17,4 +12,4 @@ def index(request, item_id):
             "url": item.url,
         }
     }
-    return HttpResponse(template.render(context, request))
+    return render(request, "detail.html", context)
