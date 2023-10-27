@@ -17,7 +17,7 @@ PROPERTY = {
 }
 
 MATH_QUERY = """
-SELECT 
+SELECT
   DISTINCT ?item ?itemLabel ?itemDescription ?image
   ?mwID ?emID ?nlabID ?pwID
   ?art
