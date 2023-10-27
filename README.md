@@ -1,5 +1,9 @@
 # mathswitch
 
+Infrastructure for relaying and exchanging mathematical concepts.
+
+## Notes on installation and usage
+
 `pip install django Pillow requests`
 
 To prepare database migrations:
@@ -87,3 +91,4 @@ WHERE
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
 }
 ```
+
