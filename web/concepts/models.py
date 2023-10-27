@@ -16,4 +16,11 @@ class Item(models.Model):
     links = models.ManyToManyField("self", blank=True)
 
     class Meta:
+        ordering = ["name", "source", "identifier"]
         unique_together = ["source", "identifier"]
+
+    def __str__(self):
+        if self.name:
+            return f"{self.get_source_display()}: {self.identifier} ({self.name})"
+        else:
+            return f"{self.get_source_display()}: {self.identifier}"
