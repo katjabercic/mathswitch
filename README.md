@@ -4,7 +4,7 @@ Infrastructure for relaying and exchanging mathematical concepts.
 
 ## Notes on installation and usage
 
-`pip install django Pillow requests`
+`pip install -r requirements.txt`
 
 To prepare database migrations:
 `python manage.py createmigrations`
