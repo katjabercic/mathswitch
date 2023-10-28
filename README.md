@@ -26,9 +26,23 @@ If you ever want to repopulate the database, you can clear it using
 
 ## Notes for developers
 
-In order to contribute, install Black and isort autoformatters and flake8 linter.
+In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter.
 
     pip install black isort flake8
+
+You can run all three with
+
+    isort .
+    black .
+    flake8
+
+or set up a Git pre-commit hook by creating `.git/hooks/pre-commit` with the following contents:
+
+```bash
+#!/bin/bash
+
+black . && isort . && flake8
+```
 
 Each time after you change a model, make sure to create the appropriate migrations:
 
