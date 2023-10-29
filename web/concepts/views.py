@@ -10,6 +10,7 @@ def index(request, item_id):
             "name": item.name,
             "description": item.description,
             "url": item.url,
+            "links": item.get_links()
         }
     }
     return render(request, "detail.html", context)

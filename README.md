@@ -2,6 +2,8 @@
 
 Infrastructure for relaying and exchanging mathematical concepts.
 
+For a demonstration of a page with at least one link, see for example `{baseurl}/concept/Q1369621/`.
+
 ## Notes on installation and usage
 
 To install all the necessary Python packages, run:

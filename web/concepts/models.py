@@ -19,6 +19,16 @@ class Item(models.Model):
         ordering = ["name", "source", "identifier"]
         unique_together = ["source", "identifier"]
 
+    def get_link(self):
+        return {
+            "name": self.name,
+            "source": self.source,
+            "url": self.url
+        }
+
+    def get_links(self):
+        return [linked_item.get_link() for linked_item in self.links.all()]
+
     def __str__(self):
         if self.name:
             return f"{self.get_source_display()}: {self.identifier} ({self.name})"

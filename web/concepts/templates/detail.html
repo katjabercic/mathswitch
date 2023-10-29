@@ -10,7 +10,10 @@
     <main class="container">
         <a href="{{ item.url }}">{{ item.identifier }}</a> <br>
         {{ item.name }} <br>
-        {{ item.description }}
+        {{ item.description }} <br>
+        {% for link in item.links %}
+          <a href="{{ link.url }}">{{ link.source }}: {{ link.name }}</a> <br>
+        {% endfor %}
     </main>
   </body>
 </html>
