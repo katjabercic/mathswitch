@@ -46,7 +46,11 @@ black . && isort . && flake8
 
 Each time after you change a model, make sure to create the appropriate migrations:
 
-    python manage.py createmigrations
+    python manage.py makemigrations
+
+To update the database with the new model, run:
+
+    python manage.py migrate
 
 ## WD query examples
 
