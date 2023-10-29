@@ -4,19 +4,49 @@ Infrastructure for relaying and exchanging mathematical concepts.
 
 ## Notes on installation and usage
 
-`pip install -r requirements.txt`
+To install all the necessary Python packages, run:
 
-To prepare database migrations:
-`python manage.py createmigrations`
+    pip install -r requirements.txt
 
-To update the database with the new model:
-`python manage.py migrate`
+Next, to create a database, run:
 
-Manage Wikidata imported data:
+    python manage.py migrate
+
+In order to use the administrative interface, you need to create an admin user:
+
+    python manage.py createsuperuser
+
+Finally, to populate the database, run
+
+    python manage.py import_wikidata
+
+If you ever want to repopulate the database, you can clear it using
+
+    python manage.py clear_wikidata
+
+## Notes for developers
+
+In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter.
+
+    pip install black isort flake8
+
+You can run all three with
+
+    isort .
+    black .
+    flake8
+
+or set up a Git pre-commit hook by creating `.git/hooks/pre-commit` with the following contents:
+
+```bash
+#!/bin/bash
+
+black . && isort . && flake8
 ```
-python manage.py clear_wikidata
-python manage.py import_wikidata
-```
+
+Each time after you change a model, make sure to create the appropriate migrations:
+
+    python manage.py createmigrations
 
 ## WD query examples
 
@@ -58,9 +88,6 @@ WHERE {
 }
 ```
 
-
-
-
 ```
 SELECT ?art WHERE {
   # an article in the english wikipedia with a corresponding wikidata entry
@@ -77,7 +104,6 @@ SELECT ?art WHERE {
 }
 ```
 
-
 ```
 SELECT ?itemLabel ?descriptionLabel ?areaLabel ?mathworld
 WHERE
@@ -91,4 +117,3 @@ WHERE
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
 }
 ```
-
