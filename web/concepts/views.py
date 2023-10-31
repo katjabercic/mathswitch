@@ -2,7 +2,7 @@ from concepts.models import Item
 from django.shortcuts import get_object_or_404, render
 
 
-def index(request, item_id):
+def concept(request, item_id):
     item = get_object_or_404(Item, identifier=item_id)
     context = {
         "item": {
@@ -14,3 +14,6 @@ def index(request, item_id):
         }
     }
     return render(request, "detail.html", context)
+
+def home(request):
+    return render(request, "index.html")

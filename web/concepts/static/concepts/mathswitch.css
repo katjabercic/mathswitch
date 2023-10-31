@@ -1,0 +1,13 @@
+footer {
+    border: 1px solid red;
+}
+
+.powered-by-wikidata {
+    content: url("http://imgur.com/SZ8Cm.jpg");
+}
+
+@media (prefers-color-scheme: dark) {
+    .powered-by-wikidata {
+        content: url("http://imgur.com/SZ8Cm.jpg");
+    }
+}
