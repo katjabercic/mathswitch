@@ -50,7 +50,7 @@ class WikidataSlurper:
         for json_item in self.raw_data:
             currentItem = Item.objects.get(source=self.source, identifier=self.id_map(json_item))
             if self.source == Item.Source.WIKIDATA:
-                # nLab
+                # nLab, MathWorld
                 if "nlabID" in json_item:
                     nlab_id = json_item["nlabID"]["value"]
                     try:
@@ -58,6 +58,13 @@ class WikidataSlurper:
                         currentItem.links.add(linkToItem)
                     except:
                         logging.log(logging.WARNING, f" NLab item {nlab_id} does not exist in the database.")
+                elif "mwID" in json_item:
+                    mw_id = json_item["mwID"]["value"]
+                    try:
+                        linkToItem = Item.objects.get(source=Item.Source.MATHWORLD, identifier=mw_id)
+                        currentItem.links.add(linkToItem)
+                    except:
+                        logging.log(logging.WARNING, f" MathWorld item {mw_id} does not exist in the database.")
             else: # link back to WD items
                 wd_id = json_item["item"]["value"].split("/")[-1]
                 try:
@@ -129,3 +136,22 @@ WHERE {
     desc_map=lambda _: None
     )
 
+WD_MATHWORLD_SLURPER = WikidataSlurper(
+    Item.Source.MATHWORLD, 
+    """
+SELECT
+  DISTINCT ?item ?mwID
+WHERE {
+  # anything that has the MathWorld identifier property
+  ?item wdt:P4215 ?mwID .
+  # except for humans
+  FILTER NOT EXISTS{ ?item wdt:P31 wd:Q5 . }
+  # collect the label and description
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+""", 
+    id_map=lambda item: item["mwID"]["value"],
+    url_map=lambda item: "https://mathworld.wolfram.com/" + item["mwID"]["value"] + ".html",
+    name_map=lambda item: item["mwID"]["value"],
+    desc_map=lambda _: None
+    )

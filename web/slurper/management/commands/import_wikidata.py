@@ -6,5 +6,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         source_wikidata.WD_SLURPER.save_items()
         source_wikidata.WD_NLAB_SLURPER.save_items()
+        source_wikidata.WD_MATHWORLD_SLURPER.save_items()
         source_wikidata.WD_SLURPER.save_links()
         source_wikidata.WD_NLAB_SLURPER.save_links()
+        source_wikidata.WD_MATHWORLD_SLURPER.save_links()

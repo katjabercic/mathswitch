@@ -5,6 +5,7 @@ class Item(models.Model):
     class Source(models.TextChoices):
         WIKIDATA = "Wd", "Wikidata"
         NLAB = "nL", "nLab"
+        MATHWORLD = "MW", "MathWorld"
         WIKIPEDIA_EN = "WpEN", "Wikipedia (English)"
         AGDA_UNIMATH = "AUm", "Agda Unimath"
 
