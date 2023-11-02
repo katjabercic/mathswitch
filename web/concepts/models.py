@@ -21,11 +21,7 @@ class Item(models.Model):
         unique_together = ["source", "identifier"]
 
     def get_link(self):
-        return {
-            "name": self.name,
-            "source": self.source,
-            "url": self.url
-        }
+        return {"name": self.name, "source": self.source, "url": self.url}
 
     def get_links(self):
         return [linked_item.get_link() for linked_item in self.links.all()]

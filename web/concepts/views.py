@@ -10,10 +10,11 @@ def concept(request, source, item_id):
             "name": item.name,
             "description": item.description,
             "url": item.url,
-            "links": item.get_links()
+            "links": item.get_links(),
         }
     }
     return render(request, "detail.html", context)
+
 
 def home(request):
     return render(request, "index.html")

@@ -7,7 +7,6 @@ from django.db.utils import IntegrityError
 
 
 class WikidataSlurper:
-
     SPARQL_URL = "https://query.wikidata.org/sparql"
 
     def __init__(self, source, query, id_map, url_map, name_map, desc_map):
@@ -25,14 +24,14 @@ class WikidataSlurper:
             params={"format": "json", "query": self.query},
         )
         return response.json()["results"]["bindings"]
-    
+
     def json_to_item(self, item) -> Optional[Item]:
         return Item(
             source=self.source,
             identifier=self.id_map(item),
             url=self.url_map(item),
             name=self.name_map(item),
-            description=self.desc_map(item)
+            description=self.desc_map(item),
         )
 
     def get_items(self):
@@ -48,34 +47,51 @@ class WikidataSlurper:
 
     def save_links(self):
         for json_item in self.raw_data:
-            currentItem = Item.objects.get(source=self.source, identifier=self.id_map(json_item))
+            currentItem = Item.objects.get(
+                source=self.source, identifier=self.id_map(json_item)
+            )
             if self.source == Item.Source.WIKIDATA:
                 # nLab, MathWorld
                 if "nlabID" in json_item:
                     nlab_id = json_item["nlabID"]["value"]
                     try:
-                        linkToItem = Item.objects.get(source=Item.Source.NLAB, identifier=nlab_id)
+                        linkToItem = Item.objects.get(
+                            source=Item.Source.NLAB, identifier=nlab_id
+                        )
                         currentItem.links.add(linkToItem)
                     except:
-                        logging.log(logging.WARNING, f" NLab item {nlab_id} does not exist in the database.")
+                        logging.log(
+                            logging.WARNING,
+                            f" NLab item {nlab_id} does not exist in the database.",
+                        )
                 elif "mwID" in json_item:
                     mw_id = json_item["mwID"]["value"]
                     try:
-                        linkToItem = Item.objects.get(source=Item.Source.MATHWORLD, identifier=mw_id)
+                        linkToItem = Item.objects.get(
+                            source=Item.Source.MATHWORLD, identifier=mw_id
+                        )
                         currentItem.links.add(linkToItem)
                     except:
-                        logging.log(logging.WARNING, f" MathWorld item {mw_id} does not exist in the database.")
-            else: # link back to WD items
+                        logging.log(
+                            logging.WARNING,
+                            f" MathWorld item {mw_id} does not exist in the database.",
+                        )
+            else:  # link back to WD items
                 wd_id = json_item["item"]["value"].split("/")[-1]
                 try:
-                    linkToItem = Item.objects.get(source=Item.Source.WIKIDATA, identifier=wd_id)
+                    linkToItem = Item.objects.get(
+                        source=Item.Source.WIKIDATA, identifier=wd_id
+                    )
                     currentItem.links.add(linkToItem)
                 except:
-                    logging.log(logging.WARNING, f" Wikidata item {wd_id} does not exist in the database.")
+                    logging.log(
+                        logging.WARNING,
+                        f" Wikidata item {wd_id} does not exist in the database.",
+                    )
 
 
 WD_SLURPER = WikidataSlurper(
-    Item.Source.WIKIDATA, 
+    Item.Source.WIKIDATA,
     """
 SELECT
   DISTINCT ?item ?itemLabel ?itemDescription ?image
@@ -109,15 +125,17 @@ WHERE {
   # collect the label and description
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-""", 
+""",
     id_map=lambda item: item["item"]["value"].split("/")[-1],
     url_map=lambda item: item["item"]["value"],
     name_map=lambda item: item["itemLabel"]["value"] if ("itemLabel" in item) else None,
-    desc_map=lambda item: item["itemDescription"]["value"] if ("itemDescription" in item) else None
-    )
+    desc_map=lambda item: item["itemDescription"]["value"]
+    if ("itemDescription" in item)
+    else None,
+)
 
 WD_NLAB_SLURPER = WikidataSlurper(
-    Item.Source.NLAB, 
+    Item.Source.NLAB,
     """
 SELECT
   DISTINCT ?item ?nlabID
@@ -129,15 +147,15 @@ WHERE {
   # collect the label and description
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-""", 
+""",
     id_map=lambda item: item["nlabID"]["value"],
     url_map=lambda item: "https://ncatlab.org/nlab/show/" + item["nlabID"]["value"],
     name_map=lambda item: item["nlabID"]["value"],
-    desc_map=lambda _: None
-    )
+    desc_map=lambda _: None,
+)
 
 WD_MATHWORLD_SLURPER = WikidataSlurper(
-    Item.Source.MATHWORLD, 
+    Item.Source.MATHWORLD,
     """
 SELECT
   DISTINCT ?item ?mwID
@@ -149,9 +167,11 @@ WHERE {
   # collect the label and description
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-""", 
+""",
     id_map=lambda item: item["mwID"]["value"],
-    url_map=lambda item: "https://mathworld.wolfram.com/" + item["mwID"]["value"] + ".html",
+    url_map=lambda item: "https://mathworld.wolfram.com/"
+    + item["mwID"]["value"]
+    + ".html",
     name_map=lambda item: item["mwID"]["value"],
-    desc_map=lambda _: None
-    )
+    desc_map=lambda _: None,
+)
