@@ -7,14 +7,27 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <link rel="stylesheet" href="{% static 'concepts/mathswitch.css' %}">
     <title>mathswitch</title>
+    <meta
+      name="description"
+      content="Infrastructure for relaying and exchanging mathematical concepts."
+    />
   </head>
   <body>
-    <main class="container">
+    <header class="container">
+      <hgroup>
         <h1>mathswitch</h1>
-        <p>Infrastructure for relaying and exchanging mathematical concepts.</p>
-        <p>Example: <a href="concept/Q1369621/">Q1369621</a></p>
+        <h2>Infrastructure for relaying and exchanging mathematical concepts.</h2>
+      </hgroup>
+    </header>
+    <main class="container" id="examples">
+      <form>
+        <label for="search">This is just a placeholder:</label>
+        <input type="search" id="search" name="search" placeholder="Search" />
+      </form>
+      <h2>Examples</h2>
+      <p>By Wikidata identifier: <a href="concept/Wd/Q1369621/">Q1369621</a></p>
     </main>
-    <footer>
+    <footer class="container">
         <img class="powered-by-wikidata" alt="Powered by Wikidata" />
     </footer>
   </body>

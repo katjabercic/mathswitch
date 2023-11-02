@@ -2,8 +2,8 @@ from concepts.models import Item
 from django.shortcuts import get_object_or_404, render
 
 
-def concept(request, item_id):
-    item = get_object_or_404(Item, identifier=item_id)
+def concept(request, source, item_id):
+    item = get_object_or_404(Item, source=source, identifier=item_id)
     context = {
         "item": {
             "identifier": item.identifier,
