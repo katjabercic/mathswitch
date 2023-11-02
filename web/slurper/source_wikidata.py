@@ -59,7 +59,7 @@ class WikidataSlurper:
                             source=Item.Source.NLAB, identifier=nlab_id
                         )
                         currentItem.links.add(linkToItem)
-                    except:
+                    except IntegrityError:
                         logging.log(
                             logging.WARNING,
                             f" NLab item {nlab_id} does not exist in the database.",
@@ -71,7 +71,7 @@ class WikidataSlurper:
                             source=Item.Source.MATHWORLD, identifier=mw_id
                         )
                         currentItem.links.add(linkToItem)
-                    except:
+                    except IntegrityError:
                         logging.log(
                             logging.WARNING,
                             f" MathWorld item {mw_id} does not exist in the database.",
@@ -83,7 +83,7 @@ class WikidataSlurper:
                         source=Item.Source.WIKIDATA, identifier=wd_id
                     )
                     currentItem.links.add(linkToItem)
-                except:
+                except IntegrityError:
                     logging.log(
                         logging.WARNING,
                         f" Wikidata item {wd_id} does not exist in the database.",
