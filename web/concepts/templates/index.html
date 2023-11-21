@@ -1,34 +1,18 @@
-<!doctype html>
-{% load static %}
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <link rel="stylesheet" href="{% static 'concepts/mathswitch.css' %}">
-    <title>mathswitch</title>
-    <meta
-      name="description"
-      content="Infrastructure for relaying and exchanging mathematical concepts."
-    />
-  </head>
-  <body>
-    <header class="container">
-      <hgroup>
-        <h1>mathswitch</h1>
-        <h2>Infrastructure for relaying and exchanging mathematical concepts.</h2>
-      </hgroup>
-    </header>
-    <main class="container" id="examples">
-      <form>
-        <label for="search">This is just a placeholder:</label>
-        <input type="search" id="search" name="search" placeholder="Search" />
-      </form>
-      <h2>Example:</h2>
-      <p>By Wikidata identifier: <a href="concept/Wd/Q1369621/">Q1369621</a></p>
-    </main>
-    <footer class="container">
-        <img class="powered-by-wikidata" alt="Powered by Wikidata" />
-    </footer>
-  </body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form method="GET" action="search/">
+  <label for="search">Search for a concept by name:</label>
+  <input type="search" id="q" name="q" placeholder="Search" list="concepts" />
+  <datalist id="concepts"> 
+    {% for c in concepts %}
+    <option value="{{ c }}" />
+    {% endfor %}
+  </datalist>
+  <input type="submit" />
+</form>
+<h2>Examples</h2>
+<p><a href="/concept/Schwartz%20space/">Schwartz space</a></p>
+
+{% endblock %}

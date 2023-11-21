@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import requests
-from concepts.models import Item
+from concepts.models import Item, Link
 from django.db.utils import IntegrityError
 
 
@@ -43,7 +43,7 @@ class WikidataSlurper:
             try:
                 item.save()
             except IntegrityError:
-                logging.log(logging.WARNING, f" Item {item.identifier} repeated.")
+                logging.log(logging.WARNING, f" Link from {item.identifier} repeated.")
 
     def save_links(self):
         for json_item in self.raw_data:
@@ -55,11 +55,11 @@ class WikidataSlurper:
                 if "nlabID" in json_item:
                     nlab_id = json_item["nlabID"]["value"]
                     try:
-                        linkToItem = Item.objects.get(
+                        destinationItem = Item.objects.get(
                             source=Item.Source.NLAB, identifier=nlab_id
                         )
-                        currentItem.links.add(linkToItem)
-                    except IntegrityError:
+                        Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
+                    except Item.DoesNotExist:
                         logging.log(
                             logging.WARNING,
                             f" NLab item {nlab_id} does not exist in the database.",
@@ -67,11 +67,12 @@ class WikidataSlurper:
                 elif "mwID" in json_item:
                     mw_id = json_item["mwID"]["value"]
                     try:
-                        linkToItem = Item.objects.get(
+                        print("looking for ", mw_id)
+                        destinationItem = Item.objects.get(
                             source=Item.Source.MATHWORLD, identifier=mw_id
                         )
-                        currentItem.links.add(linkToItem)
-                    except IntegrityError:
+                        Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
+                    except Item.DoesNotExist:
                         logging.log(
                             logging.WARNING,
                             f" MathWorld item {mw_id} does not exist in the database.",
@@ -79,11 +80,11 @@ class WikidataSlurper:
             else:  # link back to WD items
                 wd_id = json_item["item"]["value"].split("/")[-1]
                 try:
-                    linkToItem = Item.objects.get(
+                    destinationItem = Item.objects.get(
                         source=Item.Source.WIKIDATA, identifier=wd_id
                     )
-                    currentItem.links.add(linkToItem)
-                except IntegrityError:
+                    Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
+                except Item.DoesNotExist:
                     logging.log(
                         logging.WARNING,
                         f" Wikidata item {wd_id} does not exist in the database.",

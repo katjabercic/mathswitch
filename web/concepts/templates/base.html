@@ -1,0 +1,30 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="stylesheet" href="{% static 'concepts/mathswitch.css' %}">
+    <title>mathswitch</title>
+    <meta
+      name="description"
+      content="Infrastructure for relaying and exchanging mathematical concepts."
+    />
+  </head>
+  <body>
+    <header class="container">
+      <hgroup>
+        <h1>mathswitch</h1>
+        <p>Infrastructure for relaying and exchanging mathematical concepts.</p>
+      </hgroup>
+    </header>
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer class="container">
+        <img class="powered-by-wikidata" alt="Powered by Wikidata" />
+    </footer>
+  </body>
+</html>
