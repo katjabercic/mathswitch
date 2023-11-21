@@ -2,7 +2,7 @@
 
 Infrastructure for relaying and exchanging mathematical concepts.
 
-For a demonstration of a page with at least one link, see for example `{baseurl}/concept/Q1369621/`.
+For a demonstration of a page with at least one link, see for example `{baseurl}/concept/Schwartz%20space/`.
 
 ## Notes on installation and usage
 

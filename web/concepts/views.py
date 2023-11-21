@@ -1,20 +1,27 @@
-from concepts.models import Item
-from django.shortcuts import get_object_or_404, render
+from concepts.models import Concept, Item
+from django.shortcuts import get_object_or_404, redirect, render
 
 
-def concept(request, source, item_id):
-    item = get_object_or_404(Item, source=source, identifier=item_id)
+def concept(request, name):
+    concept = get_object_or_404(Concept, name=name)
     context = {
-        "item": {
-            "identifier": item.identifier,
-            "name": item.name,
-            "description": item.description,
-            "url": item.url,
-            "links": item.get_links(),
+        "concept": {
+            "name": concept.name,
+            "description": concept.description,
+            "items": [
+                item.to_dict() for item in Item.objects.filter(concept=concept.id)
+            ],
         }
     }
     return render(request, "detail.html", context)
 
 
 def home(request):
-    return render(request, "index.html")
+    autocomplete_concepts = [c.name for c in Concept.objects.all()]
+    context = {"concepts": autocomplete_concepts}
+    return render(request, "index.html", context)
+
+
+def search(request):
+    search_value = request.GET.get("q")
+    return redirect("/concept/" + search_value)
