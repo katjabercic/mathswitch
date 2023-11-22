@@ -13,15 +13,15 @@ class AgdaUnimathSlurper:
     def __init__(self):
         self.source = Item.Source.AGDA_UNIMATH
         self.id_map = lambda item: item["id"]
-        self.url_map = lambda item: "https://unimath.github.io/agda-unimath/" + item['link']
+        self.url_map = (
+            lambda item: "https://unimath.github.io/agda-unimath/" + item["link"]
+        )
         self.name_map = lambda item: item["name"]
         self.desc_map = lambda _: None
         self.raw_data = self.fetch_json()
 
     def fetch_json(self):
-        response = requests.get(
-            self.JSON_URL
-        )
+        response = requests.get(self.JSON_URL)
         return response.json()
 
     def json_to_item(self, item) -> Optional[Item]:
@@ -39,17 +39,28 @@ class AgdaUnimathSlurper:
                 item = self.json_to_item(json_item)
                 item.save()
                 if "wikidata" in json_item:
-                    print(json_item["wikidata"])
+                    wd_id = json_item["wikidata"]
                     try:
                         destinationItem = Item.objects.get(
-                            source=Item.Source.WIKIDATA, identifier=json_item["wikidata"]
+                            source=Item.Source.WIKIDATA,
+                            identifier=wd_id,
                         )
                         Link.save_new(item, destinationItem, Link.Label.AGDA_UNIMATH)
                     except Item.DoesNotExist:
-                        logging.log(logging.WARNING, f"Item WD {json_item['wikidata']} does not exist.")
+                        logging.log(
+                            logging.WARNING,
+                            f"Item WD {wd_id} does not exist.",
+                        )
                     except IntegrityError:
-                        logging.log(logging.WARNING, f"Repeated link between AUm {item.identifier} and WD {json_item['wikidata']}.")
+                        logging.log(
+                            logging.WARNING,
+                            f"Repeated link: AUm {item.identifier} -> WD {wd_id}.",
+                        )
             except IntegrityError:
-                logging.log(logging.WARNING, f"Item {item.identifier} is already in the database.")
+                logging.log(
+                    logging.WARNING,
+                    f"Item {item.identifier} is already in the database.",
+                )
+
 
 AU_SLURPER = AgdaUnimathSlurper()

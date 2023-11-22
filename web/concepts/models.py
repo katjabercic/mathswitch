@@ -1,8 +1,8 @@
 import logging
 
+from concepts.utils import UnionFind
 from django.db import models
 from django.db.utils import IntegrityError
-from concepts.utils import UnionFind
 
 
 class Concept(models.Model):
@@ -12,15 +12,14 @@ class Concept(models.Model):
     class Meta:
         ordering = ["name", "description"]
 
-class LinkQuerySet(models.QuerySet):
 
+class LinkQuerySet(models.QuerySet):
     def to_tuples(self):
         for link in self:
             yield (link.source, link.destination)
 
 
 class ItemQuerySet(models.QuerySet):
-
     def create_singleton_concepts(self):
         count_duplicates = 0
         for item in self:
@@ -39,7 +38,9 @@ class ItemQuerySet(models.QuerySet):
         uf = UnionFind(self.all(), Link.objects.all().to_tuples())
         for concept_items in uf.get_item_components(sort_key=Item.Source.key()):
             # first check if WD is one of the items
-            new_concept = Concept(name=concept_items[0].name, description=concept_items[0].description)
+            new_concept = Concept(
+                name=concept_items[0].name, description=concept_items[0].description
+            )
             if new_concept.name == "Alexander polynomial":
                 print(concept_items)
             try:
@@ -54,6 +55,7 @@ class ItemQuerySet(models.QuerySet):
             for item in concept_items:
                 item.concept = new_concept
                 item.save()
+
 
 class Item(models.Model):
     class Source(models.TextChoices):

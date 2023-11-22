@@ -1,13 +1,14 @@
 from typing import Any, Dict, List, Tuple
 
-class UnionFind:
 
+class UnionFind:
     item_to_element: Dict[Any, int] = {}
     components: Dict[int, List[int]] = {}
     element_links: List[Tuple[int, int]] = []
 
     def __init__(self, items, links):
-        """Initialize union-find with a list of items and a list of links given as pairs of items."""
+        """Initialize union-find with a list of items
+        and a list of links given as pairs of items."""
         self.size = len(items)
         self.item_list = list(items)
         self.parent = [i for i in range(self.size)]
@@ -50,8 +51,9 @@ class UnionFind:
                 self.components[root].append(i)
 
     def get_item_components(self, sort_key):
-        def elements_to_sorted_items(elements : List[int]):
+        def elements_to_sorted_items(elements: List[int]):
             items = list(map(lambda e: self.item_list[e], elements))
             items.sort(key=sort_key)
             return items
+
         return list(map(elements_to_sorted_items, self.components.values()))
