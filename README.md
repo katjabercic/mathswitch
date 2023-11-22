@@ -54,6 +54,20 @@ To update the database with the new model, run:
 
     python manage.py migrate
 
+## Instructions for Katja to update the live version
+
+  sudo systemctl stop mathswitch
+  cd mathswitch
+  git pull
+  source venv/bin/activate
+  cd web
+  ./manage.py clear_wikidata
+  ./manage.py migrate
+  ./manage.py import_wikidata
+  ./manage.py link_same
+  ./manage.py compute_concepts
+  sudo systemctl start mathswitch
+
 ## WD query examples
 
 ```

@@ -11,7 +11,6 @@ class Concept(models.Model):
     class Meta:
         ordering = ["name", "description"]
 
-
 class Item(models.Model):
     class Source(models.TextChoices):
         WIKIDATA = "Wd", "Wikidata"
