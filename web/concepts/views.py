@@ -15,7 +15,6 @@ def concept(request, name):
     }
     return render(request, "detail.html", context)
 
-
 def home(request):
     autocomplete_concepts = [c.name for c in Concept.objects.all()]
     context = {"concepts": autocomplete_concepts}
@@ -25,3 +24,8 @@ def home(request):
 def search(request):
     search_value = request.GET.get("q")
     return redirect("/concept/" + search_value)
+
+def redirect_item_to_concept(request, source, identifier):
+    # should this be a permanent redirect?
+    item = get_object_or_404(Item, source=source, identifier=identifier)
+    return redirect("/concept/" + item.concept.name)
