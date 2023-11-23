@@ -58,6 +58,9 @@ WHERE {
         return response.json()["results"]["bindings"]
 
     def json_to_item(self, item) -> Optional[Item]:
+        if self.name_map(item) == "group":
+            print(self.source, item, self.name_map(item))
+            input()
         return Item(
             source=self.source,
             identifier=self.id_map(item),
@@ -78,18 +81,18 @@ WHERE {
                 logging.log(logging.WARNING, f" Link from {item.identifier} repeated.")
 
     def save_links(self):
-
         def source_to_key(source):
             """Map source to WD json key for that source"""
-            if source == Item.Source.NLAB: return "nlabID"
-            elif source == Item.Source.MATHWORLD: return "mwID"
-            else: return None
+            if source == Item.Source.NLAB:
+                return "nlabID"
+            elif source == Item.Source.MATHWORLD:
+                return "mwID"
+            else:
+                return None
 
         def save_link(current_item, source, source_id):
             try:
-                destinationItem = Item.objects.get(
-                    source=source, identifier=source_id
-                )
+                destinationItem = Item.objects.get(source=source, identifier=source_id)
                 Link.save_new(current_item, destinationItem, Link.Label.WIKIDATA)
             except Item.DoesNotExist:
                 logging.log(
@@ -160,7 +163,7 @@ WD_MATHWORLD_SLURPER = WikidataSlurper(
     Item.Source.MATHWORLD,
     """
   # anything that has the MathWorld identifier property
-  ?item wdt:P4215 ?mwID .
+  ?item wdt:P2812 ?mwID .
 """,
     id_map=lambda item: item["mwID"]["value"],
     url_map=lambda item: "https://mathworld.wolfram.com/"

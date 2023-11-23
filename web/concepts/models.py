@@ -21,13 +21,11 @@ class LinkQuerySet(models.QuerySet):
 
 class ItemQuerySet(models.QuerySet):
     def create_singleton_concepts(self):
-        count_duplicates = 0
         for item in self:
-            new_concept = Concept(name=item.name, description=item.description)
             try:
+                new_concept = item.to_concept()
                 new_concept.save()
             except IntegrityError:
-                count_duplicates += 1
                 logging.log(
                     logging.WARNING,
                     f" A concept named '{new_concept.name}' already exists.",
@@ -35,14 +33,14 @@ class ItemQuerySet(models.QuerySet):
             item.concept = new_concept
 
     def create_concepts(self):
-        uf = UnionFind(self.all(), Link.objects.all().to_tuples())
-        for concept_items in uf.get_item_components(sort_key=Item.Source.key()):
-            # first check if WD is one of the items
-            new_concept = Concept(
-                name=concept_items[0].name, description=concept_items[0].description
-            )
-            if new_concept.name == "Alexander polynomial":
-                print(concept_items)
+        def take_first(lst):
+            next(filter(lambda x: x is not None, lst), None)
+
+        components = UnionFind(self.all(), Link.objects.all().to_tuples())
+        for concept_items in components.get_item_components(sort_key=Item.Source.key()):
+            name = take_first([item.name for item in concept_items])
+            description = take_first([item.description for item in concept_items])
+            new_concept = Concept(name=name, description=description)
             try:
                 new_concept.save()
             except IntegrityError:
@@ -50,8 +48,7 @@ class ItemQuerySet(models.QuerySet):
                     logging.WARNING,
                     f" A concept named '{new_concept.name}' already exists.",
                 )
-                new_concept = Concept.objects.get(name=concept_items[0].name)
-            # print(f"linking {new_concept.id}")
+                new_concept = Concept.objects.get(name=name)
             for item in concept_items:
                 item.concept = new_concept
                 item.save()
@@ -107,6 +104,9 @@ class Item(models.Model):
 
     def get_linked_item_urls(self):
         return [i.get_url() for i in self.get_linked_items()]
+
+    def to_concept(self):
+        return Concept(name=self.name, description=self.description)
 
     def __str__(self):
         if self.name:
