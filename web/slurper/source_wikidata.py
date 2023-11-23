@@ -58,9 +58,6 @@ WHERE {
         return response.json()["results"]["bindings"]
 
     def json_to_item(self, item) -> Optional[Item]:
-        if self.name_map(item) == "group":
-            print(self.source, item, self.name_map(item))
-            input()
         return Item(
             source=self.source,
             identifier=self.id_map(item),
