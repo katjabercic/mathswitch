@@ -6,6 +6,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("clear_agda_unimath")
         call_command("clear_wikidata")
+        call_command("migrate")
         call_command("import_wikidata")
         call_command("import_agda_unimath")
         call_command("link_same")

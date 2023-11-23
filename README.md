@@ -61,11 +61,7 @@ To update the database with the new model, run:
   git pull
   source venv/bin/activate
   cd web
-  ./manage.py clear_wikidata
-  ./manage.py migrate
-  ./manage.py import_wikidata
-  ./manage.py link_same
-  ./manage.py compute_concepts
+  ./manage.py rebuild_db
   sudo systemctl start mathswitch
 
 ## WD query examples

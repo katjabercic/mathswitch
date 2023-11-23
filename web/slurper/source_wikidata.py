@@ -9,9 +9,41 @@ from django.db.utils import IntegrityError
 class WikidataSlurper:
     SPARQL_URL = "https://query.wikidata.org/sparql"
 
+    SPARQL_QUERY_SELECT = """
+SELECT
+  DISTINCT ?item ?itemLabel ?itemDescription ?image
+  ?mwID ?emID ?nlabID ?pwID
+  ?art
+WHERE {
+"""
+
+    SPARQL_QUERY_OPTIONS = """
+  OPTIONAL
+  { ?item wdt:P18 ?image . }
+  OPTIONAL
+  { ?item wdt:P2812 ?mwID . }   # MathWorld
+  OPTIONAL
+  { ?item wdt:P7554 ?emID . }   # Encyclopedia of Mathematics
+  OPTIONAL
+  { ?item wdt:P4215 ?nlabID . } # nLab
+  OPTIONAL
+  { ?item wdt:P6781 ?pwID . }   # ProofWiki
+  OPTIONAL
+  {
+    ?art rdf:type schema:Article;
+      schema:isPartOf <https://en.wikipedia.org/>;
+      schema:about ?item .
+  }
+  # except for humans
+  FILTER NOT EXISTS{ ?item wdt:P31 wd:Q5 . }
+  # collect the label and description
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+"""
+
     def __init__(self, source, query, id_map, url_map, name_map, desc_map):
         self.source = source
-        self.query = query
+        self.query = self.SPARQL_QUERY_SELECT + query + self.SPARQL_QUERY_OPTIONS
         self.id_map = id_map
         self.url_map = url_map
         self.name_map = name_map
@@ -46,86 +78,63 @@ class WikidataSlurper:
                 logging.log(logging.WARNING, f" Link from {item.identifier} repeated.")
 
     def save_links(self):
+
+        def source_to_key(source):
+            """Map source to WD json key for that source"""
+            if source == Item.Source.NLAB: return "nlabID"
+            elif source == Item.Source.MATHWORLD: return "mwID"
+            else: return None
+
+        def save_link(current_item, source, source_id):
+            try:
+                destinationItem = Item.objects.get(
+                    source=source, identifier=source_id
+                )
+                Link.save_new(current_item, destinationItem, Link.Label.WIKIDATA)
+            except Item.DoesNotExist:
+                logging.log(
+                    logging.WARNING,
+                    f" {source} item {source_id} does not exist in the database.",
+                )
+
         for json_item in self.raw_data:
-            currentItem = Item.objects.get(
+            current_item = Item.objects.get(
                 source=self.source, identifier=self.id_map(json_item)
             )
             if self.source == Item.Source.WIKIDATA:
-                # nLab, MathWorld
-                if "nlabID" in json_item:
-                    nlab_id = json_item["nlabID"]["value"]
-                    try:
-                        destinationItem = Item.objects.get(
-                            source=Item.Source.NLAB, identifier=nlab_id
-                        )
-                        Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
-                    except Item.DoesNotExist:
-                        logging.log(
-                            logging.WARNING,
-                            f" NLab item {nlab_id} does not exist in the database.",
-                        )
-                elif "mwID" in json_item:
-                    mw_id = json_item["mwID"]["value"]
-                    try:
-                        print("looking for ", mw_id)
-                        destinationItem = Item.objects.get(
-                            source=Item.Source.MATHWORLD, identifier=mw_id
-                        )
-                        Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
-                    except Item.DoesNotExist:
-                        logging.log(
-                            logging.WARNING,
-                            f" MathWorld item {mw_id} does not exist in the database.",
-                        )
+                for source in [Item.Source.NLAB, Item.Source.MATHWORLD]:
+                    if source_to_key(source) in json_item:
+                        source_id = json_item[source_to_key(source)]["value"]
+                        save_link(current_item, source, source_id)
             else:  # link back to WD items
                 wd_id = json_item["item"]["value"].split("/")[-1]
-                try:
-                    destinationItem = Item.objects.get(
-                        source=Item.Source.WIKIDATA, identifier=wd_id
-                    )
-                    Link.save_new(currentItem, destinationItem, Link.Label.WIKIDATA)
-                except Item.DoesNotExist:
-                    logging.log(
-                        logging.WARNING,
-                        f" Wikidata item {wd_id} does not exist in the database.",
-                    )
+                save_link(current_item, Item.Source.WIKIDATA, wd_id)
 
 
-WD_SLURPER = WikidataSlurper(
+WD_SLURPER_1 = WikidataSlurper(
     Item.Source.WIKIDATA,
     """
-SELECT
-  DISTINCT ?item ?itemLabel ?itemDescription ?image
-  ?mwID ?emID ?nlabID ?pwID
-  ?art
-WHERE {
   # anything part of a topic that is studied by mathmatics
   ?item wdt:P31 ?topic .
   ?topic wdt:P2579 wd:Q395 .
-  OPTIONAL
-  { ?item wdt:P18 ?image . }
-  OPTIONAL
-  { ?item wdt:P2812 ?mwID . }   # MathWorld
-  OPTIONAL
-  { ?item wdt:P7554 ?emID . }   # Encyclopedia of Mathematics
-  OPTIONAL
-  { ?item wdt:P4215 ?nlabID . } # nLab
-  OPTIONAL
-  { ?item wdt:P6781 ?pwID . }   # ProofWiki
-  OPTIONAL
-  {
-    ?art rdf:type schema:Article;
-      schema:isPartOf <https://en.wikipedia.org/>;
-      schema:about ?item .
-  }
-
   # except for natural numbers
   filter(?topic != wd:Q21199) .
-  # except for humans
-  FILTER NOT EXISTS{ ?item wdt:P31 wd:Q5 . }
-  # collect the label and description
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
+""",
+    id_map=lambda item: item["item"]["value"].split("/")[-1],
+    url_map=lambda item: item["item"]["value"],
+    name_map=lambda item: item["itemLabel"]["value"] if ("itemLabel" in item) else None,
+    desc_map=lambda item: item["itemDescription"]["value"]
+    if ("itemDescription" in item)
+    else None,
+)
+
+WD_SLURPER_2 = WikidataSlurper(
+    Item.Source.WIKIDATA,
+    """
+  # concepts of areas of mathematics
+  ?item p:P31 ?of.
+  ?of ps:P31 wd:Q151885.
+  ?of pq:P642/p:P31/ps:P31 wd:Q1936384
 """,
     id_map=lambda item: item["item"]["value"].split("/")[-1],
     url_map=lambda item: item["item"]["value"],
@@ -138,16 +147,8 @@ WHERE {
 WD_NLAB_SLURPER = WikidataSlurper(
     Item.Source.NLAB,
     """
-SELECT
-  DISTINCT ?item ?nlabID
-WHERE {
   # anything that has the nLab identifier property
   ?item wdt:P4215 ?nlabID .
-  # except for humans
-  FILTER NOT EXISTS{ ?item wdt:P31 wd:Q5 . }
-  # collect the label and description
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
 """,
     id_map=lambda item: item["nlabID"]["value"],
     url_map=lambda item: "https://ncatlab.org/nlab/show/" + item["nlabID"]["value"],
@@ -158,16 +159,8 @@ WHERE {
 WD_MATHWORLD_SLURPER = WikidataSlurper(
     Item.Source.MATHWORLD,
     """
-SELECT
-  DISTINCT ?item ?mwID
-WHERE {
   # anything that has the MathWorld identifier property
   ?item wdt:P4215 ?mwID .
-  # except for humans
-  FILTER NOT EXISTS{ ?item wdt:P31 wd:Q5 . }
-  # collect the label and description
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
 """,
     id_map=lambda item: item["mwID"]["value"],
     url_map=lambda item: "https://mathworld.wolfram.com/"
@@ -176,3 +169,6 @@ WHERE {
     name_map=lambda item: item["mwID"]["value"],
     desc_map=lambda _: None,
 )
+
+#   ?concept wdt:P642 ?area .
+#   ?area wdt:P31 wd:Q1936384 .
