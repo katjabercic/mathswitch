@@ -2,15 +2,19 @@ import logging
 
 from concepts.utils import UnionFind
 from django.db import models
+from django.db.models.functions import Lower
 from django.db.utils import IntegrityError
 
 
 class Concept(models.Model):
-    name = models.CharField(max_length=200, null=True, unique=True)
+    name = models.CharField(max_length=200, null=True)
     description = models.TextField(null=True)
 
     class Meta:
         ordering = ["name", "description"]
+        constraints = [
+            models.UniqueConstraint(Lower("name").desc(), name="unique_lower_name")
+        ]
 
 
 class LinkQuerySet(models.QuerySet):
@@ -30,11 +34,13 @@ class ItemQuerySet(models.QuerySet):
                     logging.WARNING,
                     f" A concept named '{new_concept.name}' already exists.",
                 )
+                new_concept = Concept.objects.get(name__iexact=new_concept.name)
             item.concept = new_concept
+            item.save()
 
     def create_concepts(self):
         def take_first(lst):
-            next(filter(lambda x: x is not None, lst), None)
+            return next(filter(lambda x: x is not None, lst), None)
 
         components = UnionFind(self.all(), Link.objects.all().to_tuples())
         for concept_items in components.get_item_components(sort_key=Item.Source.key()):
@@ -143,7 +149,7 @@ class Link(models.Model):
             new_link.save()
         except IntegrityError:
             logging.log(
-                logging.WARNING,
+                logging.INFO,
                 f" Link from {source} to {destination} repeated in {label}.",
             )
 

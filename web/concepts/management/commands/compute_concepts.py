@@ -16,5 +16,5 @@ class Command(BaseCommand):
         # now deal with those that do not have a concept yet
         nonsingletons = Item.objects.filter(
             Q(incoming_items__isnull=False) | Q(outgoing_items__isnull=False)
-        )
+        ).distinct()
         nonsingletons.create_concepts()

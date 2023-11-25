@@ -17,8 +17,8 @@ def concept(request, name):
 
 
 def home(request):
-    autocomplete_concepts = [c.name for c in Concept.objects.all()]
-    context = {"concepts": autocomplete_concepts}
+    autocomplete_names = [c.name for c in Concept.objects.all() if c.name is not None]
+    context = {"concepts": autocomplete_names}
     return render(request, "index.html", context)
 
 

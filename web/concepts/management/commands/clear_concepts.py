@@ -1,7 +1,7 @@
-from concepts.models import Item
+from concepts.models import Concept
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        Item.objects.filter(source=Item.Source.AGDA_UNIMATH).delete()
+        Concept.objects.all().delete()
