@@ -3,8 +3,7 @@
 {% block content %}
 
 <form method="GET" action="search/">
-  <label for="search">Search for a concept by name:</label>
-  <input type="search" id="q" name="q" placeholder="Search" list="concepts" />
+  <input type="search" id="q" name="q" placeholder="Search for a concept by name" list="concepts" />
   <datalist id="concepts"> 
     {% for c in concepts %}
     <option value="{{ c }}" />
@@ -13,6 +12,10 @@
   <input type="submit" />
 </form>
 <h2>Examples</h2>
-<p><a href="/concept/Schwartz%20space/">Schwartz space</a></p>
+<p>
+  <a href="/concept/cauchy%20sequence/">cauchy sequence</a>,
+  <a href="/concept/mathematical%20group/">mathematical group</a>, 
+  <a href="/concept/Stone%20duality/">Stone duality</a>
+</p>
 
 {% endblock %}
