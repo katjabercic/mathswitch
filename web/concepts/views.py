@@ -18,7 +18,15 @@ def concept(request, name):
 
 def home(request):
     autocomplete_names = [c.name for c in Concept.objects.all() if c.name is not None]
-    context = {"concepts": autocomplete_names}
+    context = {
+        "concepts": autocomplete_names,
+        "number_of_links": {
+            "wikidata": Item.objects.filter(source = Item.Source.WIKIDATA).count(),
+            "nlab": Item.objects.filter(source = Item.Source.NLAB).count(),
+            "mathworld": Item.objects.filter(source = Item.Source.MATHWORLD).count(),
+            "agda_unimath": Item.objects.filter(source = Item.Source.AGDA_UNIMATH).count(),
+            },
+        }
     return render(request, "index.html", context)
 
 
