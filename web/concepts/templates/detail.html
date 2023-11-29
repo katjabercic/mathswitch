@@ -4,6 +4,8 @@
   <h2>{{ concept.name }}</h2>
   {% if concept.description != None %}
     <p>{{ concept.description }}</p>
+  {% else %}
+  <p>(no description is available)</p>
   {% endif %}
   {% for item in concept.items %}
     <a href="{{ item.url }}">{{ item.source }}: {{ item.name }}</a> <br>
