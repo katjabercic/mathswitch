@@ -219,7 +219,7 @@ SLURPERS = [
 """,
         """
   # concepts studied by an area of mathematics
-  ?item wdt:P2579 ?area . 
+  ?item wdt:P2579 ?area .
   ?area wdt:P31 wd:Q1936384
 """,
         """

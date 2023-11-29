@@ -21,12 +21,14 @@ def home(request):
     context = {
         "concepts": autocomplete_names,
         "number_of_links": {
-            "wikidata": Item.objects.filter(source = Item.Source.WIKIDATA).count(),
-            "nlab": Item.objects.filter(source = Item.Source.NLAB).count(),
-            "mathworld": Item.objects.filter(source = Item.Source.MATHWORLD).count(),
-            "agda_unimath": Item.objects.filter(source = Item.Source.AGDA_UNIMATH).count(),
-            },
-        }
+            "wikidata": Item.objects.filter(source=Item.Source.WIKIDATA).count(),
+            "nlab": Item.objects.filter(source=Item.Source.NLAB).count(),
+            "mathworld": Item.objects.filter(source=Item.Source.MATHWORLD).count(),
+            "agda_unimath": Item.objects.filter(
+                source=Item.Source.AGDA_UNIMATH
+            ).count(),
+        },
+    }
     return render(request, "index.html", context)
 
 
