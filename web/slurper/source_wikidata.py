@@ -218,9 +218,14 @@ SLURPERS = [
   ?topic wdt:P2579 wd:Q395 .
 """,
         """
+  # concepts studied by an area of mathematics
+  ?item wdt:P2579 ?area . 
+  ?area wdt:P31 wd:Q1936384
+""",
+        """
   # concepts of areas of mathematics
-  ?item p:P31 ?of.
-  ?of ps:P31 wd:Q151885.
+  ?item p:P31 ?of .
+  ?of ps:P31 wd:Q151885 .
   ?of pq:P642/p:P31/ps:P31 wd:Q1936384
 """,
         """
@@ -238,6 +243,3 @@ SLURPERS += [
     )
     for source, source_property in WikidataSlurper.OTHER_SOURCES.items()
 ]
-
-#   ?concept wdt:P642 ?area .
-#   ?area wdt:P31 wd:Q1936384 .
