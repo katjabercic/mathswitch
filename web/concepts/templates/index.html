@@ -10,8 +10,14 @@
     {% endfor %}
   </datalist>
   <input type="submit" />
+  <p>Examples:
+    <a href="/concept/circuit/">circuit</a>,
+    <a href="/concept/mathematical%20group/">mathematical group</a>,
+    <a href="/concept/Stone%20duality/">Stone duality</a>
+  </p>
 </form>
 
+<h2>About</h2>
 <p>Mathswitch collects entries from the following sources:</p>
 <ul>
   <li><a href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a> ({{ number_of_links.wikidata }} entries)</li>
@@ -22,12 +28,6 @@
   <li><a href="https://unimath.github.io/agda-unimath/">Agda Unimath</a> ({{ number_of_links.agda_unimath }} entries)</li>
 </ul>
 <p>The entries are organized into a concept network that connects the same concept appearing in different sources.</p>
-<p>The author of mathswitch is <a href="https://katja.not.si">Katja Berčič</a></p>
-
-<p>Examples:
-  <a href="/concept/circuit/">circuit</a>,
-  <a href="/concept/mathematical%20group/">mathematical group</a>,
-  <a href="/concept/Stone%20duality/">Stone duality</a>
-</p>
+<p>The author of mathswitch is <a href="https://katja.not.si">Katja Berčič</a>.</p>
 
 {% endblock %}

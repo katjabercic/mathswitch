@@ -1,15 +1,25 @@
+header {
+    border-bottom: 1px solid #1d7484;
+    padding-bottom: 0;
+    margin-bottom: 5rem;
+}
+header p { margin-bottom: 0.3rem; }
 footer {
+    margin-top: 5rem;
+    border-top: 1px solid #1d7484;
+    padding-top: 1rem;
+    color: #777;
+    font-size: 0.8em;
     text-align: center;
-    /* border: 1px solid red; */
 }
 
-.powered-by-wikidata {
-    content: url("wd-light.png");
-    transform: scale(.5);
+form {
+    margin-bottom: 5rem;
+    text-align: center;
 }
-
-@media (prefers-color-scheme: dark) {
-    .powered-by-wikidata {
-        content: url("wd-dark.png");
-    }
+input {
+    font-size: 1.3em;
+}
+#q {
+    width: 100%;
 }
