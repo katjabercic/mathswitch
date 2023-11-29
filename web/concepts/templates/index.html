@@ -2,10 +2,9 @@
 
 {% block content %}
 
-<h2>Search</h2>
 <form method="GET" action="search/">
   <input type="search" id="q" name="q" placeholder="Search for a concept by name" list="concepts" />
-  <datalist id="concepts"> 
+  <datalist id="concepts">
     {% for c in concepts %}
     <option value="{{ c }}" />
     {% endfor %}
@@ -13,20 +12,18 @@
   <input type="submit" />
 </form>
 
-<h2>Examples</h2>
-<p>
+<p>Mathswitch incorporates entries from the following sources:</p>
+<ul>
+  <li><a href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a> ({{ number_of_links.wikidata }} entries)</li>
+  <li><a href="https://ncatlab.org/nlab/show/HomePage">nLab</a> ({{ number_of_links.nlab }} entries)</li>
+  <li><a href="https://mathworld.wolfram.com">Mathworld</a> ({{ number_of_links.mathworld }} entries)</li>
+  <li><a href="https://unimath.github.io/agda-unimath/">Agda Unimath</a> ({{ number_of_links.agda_unimath }} entries)</li>
+</ul>
+
+<p>Examples:
   <a href="/concept/circuit/">circuit</a>,
-  <a href="/concept/mathematical%20group/">mathematical group</a>, 
+  <a href="/concept/mathematical%20group/">mathematical group</a>,
   <a href="/concept/Stone%20duality/">Stone duality</a>
 </p>
-
-<h2>What is in the database?</h2>
-<p>Mathswitch groups together links to concepts the following libraries and encyclopedias:</p>
-<ul>
-  <li><a href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a>: {{ number_of_links.wikidata }} links to pages,</li>
-  <li><a href="https://ncatlab.org/nlab/show/HomePage">nLab</a>: {{ number_of_links.nlab }} links to pages (via Wikidata),</li>
-  <li><a href="https://mathworld.wolfram.com">Mathworld</a>: {{ number_of_links.mathworld }} links to pages (via Wikidata),</li>
-  <li><a href="https://unimath.github.io/agda-unimath/">Agda Unimath</a>: {{ number_of_links.agda_unimath }} links to documentation in the formal mathematics library.</li>
-</ul>
 
 {% endblock %}
