@@ -65,6 +65,8 @@ class Item(models.Model):
         WIKIDATA = "Wd", "Wikidata"
         NLAB = "nL", "nLab"
         MATHWORLD = "MW", "MathWorld"
+        PROOF_WIKI = "PW", "ProofWiki"
+        ENCYCLOPEDIA_OF_MATHEMATICS = "EoM", "Encyclopedia of Mathematics"
         WIKIPEDIA_EN = "WpEN", "Wikipedia (English)"
         AGDA_UNIMATH = "AUm", "Agda Unimath"
 
@@ -74,6 +76,8 @@ class Item(models.Model):
                 Item.Source.WIKIDATA,
                 Item.Source.NLAB,
                 Item.Source.MATHWORLD,
+                Item.Source.PROOF_WIKI,
+                Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS,
                 Item.Source.WIKIPEDIA_EN,
                 Item.Source.AGDA_UNIMATH,
             ]

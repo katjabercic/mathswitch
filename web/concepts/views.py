@@ -24,6 +24,10 @@ def home(request):
             "wikidata": Item.objects.filter(source=Item.Source.WIKIDATA).count(),
             "nlab": Item.objects.filter(source=Item.Source.NLAB).count(),
             "mathworld": Item.objects.filter(source=Item.Source.MATHWORLD).count(),
+            "proof_wiki": Item.objects.filter(source=Item.Source.PROOF_WIKI).count(),
+            "encyclopedia_of_mathematics": Item.objects.filter(
+                source=Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS
+            ).count(),
             "agda_unimath": Item.objects.filter(
                 source=Item.Source.AGDA_UNIMATH
             ).count(),
