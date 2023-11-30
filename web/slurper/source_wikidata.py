@@ -73,9 +73,9 @@ WHERE {
             raw_item = BaseWdRawItem.raw_item(self.source, json_item)
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
-                raw_item.switch_source_to(Item.Source.WIKIDATA).yield_item_if_not_exists()
+                raw_item.yield_switched_if_not_exists(Item.Source.WIKIDATA)
             if raw_item.has_source(Item.Source.WIKIPEDIA_EN):
-                raw_item.switch_source_to(Item.Source.WIKIPEDIA_EN).yield_item_if_not_exists()
+                raw_item.yield_switched_if_not_exists(Item.Source.WIKIPEDIA_EN)
 
     def save_items(self):
         for item in self.get_items():
@@ -105,26 +105,20 @@ SLURPERS = [
         """
   # concepts studied by an area of mathematics
   ?item wdt:P2579 ?area .
-  ?area wdt:P31 wd:Q1936384
+  ?area wdt:P31 wd:Q1936384 .
 """,
         """
   # concepts of areas of mathematics
   ?item p:P31 ?of .
   ?of ps:P31 wd:Q151885 .
-  ?of pq:P642/p:P31/ps:P31 wd:Q1936384
-""",
-        """
-  # entities with nLab and MathWorld links
-  { ?item wdt:P4215 ?nlabID . }
-  UNION
-  { ?item wdt:P2812 ?mwID . }
+  ?of pq:P642/p:P31/ps:P31 wd:Q1936384 .
 """,
     ]
 ]
 
 SLURPERS += [
     WikidataSlurper(
-        source, f"?item {source_property['wd_property']} ?{source_property['json_key']}"
+        source, f"\n  ?item {source_property['wd_property']} ?{source_property['json_key']} .\n"
     )
     for source, source_property in WD_OTHER_SOURCES.items()
 ]

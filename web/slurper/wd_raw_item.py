@@ -63,14 +63,15 @@ class BaseWdRawItem:
         return Item.objects.filter(source=self.source, identifier=self.identifier())
 
     def item_exists(self):
-        return self._get_item_queryset().exists
+        return self._get_item_queryset().exists()
     
     def get_item(self) -> Optional[Item]:
         return self._get_item_queryset().first()
-
-    def yield_item_if_not_exists(self):
-        if not self.item_exists():
-            yield self.to_item()
+    
+    def yield_switched_if_not_exists(self, source):
+        switched = self.switch_source_to(source)
+        if not switched.item_exists():
+            yield switched.to_item()
     
     def save_link_to(self, source):
         target = self.switch_source_to(source)
@@ -113,7 +114,7 @@ class WdRawItem(BaseWdRawItem):
 
     def name(self):
         if "itemLabel" in self.raw:
-            return self.wd_id
+            return self.raw["itemLabel"]["value"]
         else:
             return None
 
