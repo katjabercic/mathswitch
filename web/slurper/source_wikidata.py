@@ -167,11 +167,10 @@ class WikidataSlurper:
         self.query = (
             """
 SELECT
-  DISTINCT ?item ?itemLabel ?itemDescription ?image
+  DISTINCT ?item ?itemLabel ?itemDescription ?image ?art
  """
             + self._sparql_source_vars_select()
             + """
-  ?art
 WHERE {
 """
             + query
