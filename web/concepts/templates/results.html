@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Search results</h2>
+
+<ul id="results">
+  {% for concept in results %}
+    <li><a href="/concept/{{ concept }}">{{ concept }}</a></li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

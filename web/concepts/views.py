@@ -3,17 +3,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 
 def concept(request, name):
-    concept = get_object_or_404(Concept, name=name)
-    context = {
-        "concept": {
-            "name": concept.name,
-            "description": concept.description,
-            "items": [
-                item.to_dict() for item in Item.objects.filter(concept=concept.id)
-            ],
+    try:
+        concept = Concept.objects.get(name=name)
+        context = {
+            "concept": {
+                "name": concept.name,
+                "description": concept.description,
+                "items": [
+                    item.to_dict() for item in Item.objects.filter(concept=concept.id)
+                ],
+            }
         }
-    }
-    return render(request, "detail.html", context)
+        return render(request, "detail.html", context)
+    except Concept.DoesNotExist:
+        return redirect("/results/" + name)
 
 
 def home(request):
@@ -45,3 +48,9 @@ def redirect_item_to_concept(request, source, identifier):
     # should this be a permanent redirect?
     item = get_object_or_404(Item, source=source, identifier=identifier)
     return redirect("/concept/" + item.concept.name)
+
+
+def results(request, query):
+    concepts = Concept.objects.filter(name__contains=query)
+    context = {"results": [concept.name for concept in concepts]}
+    return render(request, "results.html", context)

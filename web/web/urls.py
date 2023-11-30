@@ -24,5 +24,6 @@ urlpatterns = [
     path("", views.home),
     path("concept/", include("concepts.urls")),
     path("search/", views.search),
+    path("results/<str:query>", views.results),
     path("admin/", admin.site.urls),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
