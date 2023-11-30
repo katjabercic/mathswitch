@@ -52,5 +52,8 @@ def redirect_item_to_concept(request, source, identifier):
 
 def results(request, query):
     concepts = Concept.objects.filter(name__contains=query)
-    context = {"results": [concept.name for concept in concepts]}
+    context = {
+        "query": query,
+        "results": [concept.name for concept in concepts]
+        }
     return render(request, "results.html", context)

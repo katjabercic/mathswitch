@@ -64,6 +64,21 @@ To update the database with the new model, run:
   ./manage.py rebuild_db
   sudo systemctl start mathswitch
 
+## WD item JSON example
+
+```
+{
+    'item': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q192276'}, 
+    'art': {'type': 'uri', 'value': 'https://en.wikipedia.org/wiki/Measure_(mathematics)'}, 
+    'image': {'type': 'uri', 'value': 'http://commons.wikimedia.org/wiki/Special:FilePath/Measure%20illustration%20%28Vector%29.svg'}, 
+    'mwID': {'type': 'literal', 'value': 'Measure'}, 
+    'itemLabel': {'xml:lang': 'en', 'type': 'literal', 'value': 'measure'}, 
+    'itemDescription': {'xml:lang': 'en', 'type': 'literal', 'value': 'function assigning numbers to some subsets of a set, which could be seen as a generalization of length, area, volume and integral'}, 
+    'eomID': {'type': 'literal', 'value': 'measure'}, 
+    'pwID': {'type': 'literal', 'value': 'Definition:Measure_(Measure_Theory)'
+}
+```
+
 ## WD query examples
 
 ```

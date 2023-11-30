@@ -1,143 +1,8 @@
 import logging
-from typing import Optional
-
 import requests
-from concepts.models import Item, Link
+from concepts.models import Item
 from django.db.utils import IntegrityError
-
-WD_OTHER_SOURCE = {
-    Item.Source.NLAB: {
-        "wd_property": "wdt:P4215",
-        "json_key": "nlabID",
-    },
-    Item.Source.MATHWORLD: {
-        "wd_property": "wdt:P2812",
-        "json_key": "mwID",
-    },
-    Item.Source.PROOF_WIKI: {
-        "wd_property": "wdt:P6781",
-        "json_key": "pwID",
-    },
-    Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS: {
-        "wd_property": "wdt:P7554",
-        "json_key": "eomID",
-    },
-}
-
-
-class BaseWikidataRawItem:
-    def __init__(self, source, json_item):
-        self.source = source
-        self.raw = json_item
-
-    def identifier(self):
-        pass
-
-    def url(self):
-        pass
-
-    def name(self):
-        pass
-
-    def description(self):
-        pass
-
-    def to_item(self) -> Optional[Item]:
-        return Item(
-            source=self.source,
-            identifier=self.identifier(),
-            url=self.url(),
-            name=self.name(),
-            description=self.description(),
-        )
-
-    @staticmethod
-    def get_raw_item(source, json_item):
-        match source:
-            case Item.Source.WIKIDATA:
-                return WdRawItem(json_item)
-            case Item.Source.NLAB:
-                return nLabRawItem(json_item)
-            case Item.Source.MATHWORLD:
-                return MWRawItem(json_item)
-            case Item.Source.PROOF_WIKI:
-                return PWRawItem(json_item)
-            case Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS:
-                return EoMRawItem(json_item)
-
-
-class WdRawItem(BaseWikidataRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.WIKIDATA, json_item)
-
-    def identifier(self):
-        id = self.raw["item"]["value"].split("/")[-1]
-        if id is None:
-            print("raw:\n", self.raw)
-        return id
-
-    def url(self):
-        return self.raw["item"]["value"]
-
-    def name(self):
-        if "itemLabel" in self.raw:
-            return self.raw["itemLabel"]["value"]
-        else:
-            return None
-
-    def description(self):
-        if "itemDescription" in self.raw:
-            return self.raw["itemDescription"]["value"]
-        else:
-            None
-
-
-class OtherWdRawItem(BaseWikidataRawItem):
-    def __init__(self, source, json_item):
-        super().__init__(source, json_item)
-        self.json_key = WD_OTHER_SOURCE[self.source]["json_key"]
-
-    def identifier(self):
-        return self.raw[self.json_key]["value"]
-
-    def name(self):
-        return self.identifier()
-
-    def description(self):
-        return None
-
-
-class nLabRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.NLAB, json_item)
-
-    def url(self):
-        return "https://ncatlab.org/nlab/show/" + self.identifier()
-
-
-class MWRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.MATHWORLD, json_item)
-
-    def url(self):
-        return "https://mathworld.wolfram.com/" + self.identifier() + ".html"
-
-
-class PWRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.PROOF_WIKI, json_item)
-
-    def url(self):
-        return "https://proofwiki.org/wiki/" + self.identifier()
-
-
-class EoMRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS, json_item)
-
-    def url(self):
-        return "https://encyclopediaofmath.org/wiki/" + self.identifier()
-
+from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 
 class WikidataSlurper:
     SPARQL_URL = "https://query.wikidata.org/sparql"
@@ -147,7 +12,7 @@ class WikidataSlurper:
   { ?item wdt:P18 ?image . }
   OPTIONAL
   {
-    ?art rdf:type schema:Article;
+    ?wp_en rdf:type schema:Article;
       schema:isPartOf <https://en.wikipedia.org/>;
       schema:about ?item .
   }
@@ -162,12 +27,12 @@ class WikidataSlurper:
 }
 """
 
-    def __init__(self, source, query):
+    def __init__(self, source, query, limit=None):
         self.source = source
         self.query = (
             """
 SELECT
-  DISTINCT ?item ?itemLabel ?itemDescription ?image ?art
+  DISTINCT ?item ?itemLabel ?itemDescription ?image ?wp_en
  """
             + self._sparql_source_vars_select()
             + """
@@ -176,6 +41,7 @@ WHERE {
             + query
             + self._sparql_source_vars_triples()
             + self.SPARQL_QUERY_OPTIONS
+            + (f"LIMIT {limit}" if limit is not None else "")
         )
         self.raw_data = self.fetch_json()
 
@@ -183,7 +49,7 @@ WHERE {
         def to_var(source_dict):
             return " ?" + source_dict["json_key"]
 
-        return " ".join(map(to_var, WD_OTHER_SOURCE.values()))
+        return " ".join(map(to_var, WD_OTHER_SOURCES.values()))
 
     def _sparql_source_vars_triples(self):
         def to_triple(source_dict):
@@ -193,7 +59,7 @@ WHERE {
             source_var_triple += " . }"
             return source_var_triple
 
-        return "\n".join(map(to_triple, WD_OTHER_SOURCE.values()))
+        return "\n".join(map(to_triple, WD_OTHER_SOURCES.values()))
 
     def fetch_json(self):
         response = requests.get(
@@ -204,46 +70,28 @@ WHERE {
 
     def get_items(self):
         for json_item in self.raw_data:
-            yield BaseWikidataRawItem.get_raw_item(self.source, json_item).to_item()
+            raw_item = BaseWdRawItem.raw_item(self.source, json_item)
+            yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
-                wd_json_item = WdRawItem(json_item)
-                if not Item.objects.filter(
-                    source=Item.Source.WIKIDATA, identifier=wd_json_item.identifier()
-                ).exists():
-                    yield wd_json_item.to_item()
+                raw_item.switch_source_to(Item.Source.WIKIDATA).yield_item_if_not_exists()
+            if raw_item.has_source(Item.Source.WIKIPEDIA_EN):
+                raw_item.switch_source_to(Item.Source.WIKIPEDIA_EN).yield_item_if_not_exists()
 
     def save_items(self):
         for item in self.get_items():
             try:
                 item.save()
             except IntegrityError:
-                logging.log(logging.INFO, f" Link from {item.identifier} repeated.")
-
-    def save_links(self):
-        def save_link(current_item, source, source_id):
-            try:
-                destinationItem = Item.objects.get(source=source, identifier=source_id)
-                Link.save_new(current_item, destinationItem, Link.Label.WIKIDATA)
-            except Item.DoesNotExist:
                 logging.log(
-                    logging.WARNING,
-                    f" Item {source_id} {source} does not exist in the database.",
+                    logging.INFO,
+                    f"Item {item.source} {item.identifier} is already in the database.",
                 )
 
+    def save_links(self):
         for json_item in self.raw_data:
-            identifier = BaseWikidataRawItem.get_raw_item(
+            BaseWdRawItem.raw_item(
                 self.source, json_item
-            ).identifier()
-            current_item = Item.objects.get(source=self.source, identifier=identifier)
-            if self.source == Item.Source.WIKIDATA:
-                for source in [Item.Source.NLAB, Item.Source.MATHWORLD]:
-                    source_key = WD_OTHER_SOURCE[source]["json_key"]
-                    if source_key in json_item:
-                        source_id = json_item[source_key]["value"]
-                        save_link(current_item, source, source_id)
-            else:  # link back to WD items
-                wd_id = WdRawItem(json_item).identifier()
-                save_link(current_item, Item.Source.WIKIDATA, wd_id)
+            ).save_links()
 
 
 SLURPERS = [
@@ -278,5 +126,5 @@ SLURPERS += [
     WikidataSlurper(
         source, f"?item {source_property['wd_property']} ?{source_property['json_key']}"
     )
-    for source, source_property in WD_OTHER_SOURCE.items()
+    for source, source_property in WD_OTHER_SOURCES.items()
 ]

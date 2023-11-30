@@ -4,6 +4,8 @@
 
 <h2>Search results</h2>
 
+<p>Query: "{{ query }}"</p>
+
 <ul id="results">
   {% for concept in results %}
     <li><a href="/concept/{{ concept }}">{{ concept }}</a></li>
