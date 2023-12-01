@@ -1,8 +1,10 @@
 import logging
+
 import requests
 from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
+
 
 class WikidataSlurper:
     SPARQL_URL = "https://query.wikidata.org/sparql"
@@ -89,9 +91,7 @@ WHERE {
 
     def save_links(self):
         for json_item in self.raw_data:
-            BaseWdRawItem.raw_item(
-                self.source, json_item
-            ).save_links()
+            BaseWdRawItem.raw_item(self.source, json_item).save_links()
 
 
 SLURPERS = [
@@ -118,7 +118,8 @@ SLURPERS = [
 
 SLURPERS += [
     WikidataSlurper(
-        source, f"\n  ?item {source_property['wd_property']} ?{source_property['json_key']} .\n"
+        source,
+        f"\n  ?item {property['wd_property']} ?{property['json_key']} .\n",
     )
-    for source, source_property in WD_OTHER_SOURCES.items()
+    for source, property in WD_OTHER_SOURCES.items()
 ]

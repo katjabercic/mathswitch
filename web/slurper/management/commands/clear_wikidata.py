@@ -1,6 +1,6 @@
 from concepts.models import Item
 from django.core.management.base import BaseCommand
-from wd_raw_item import WD_OTHER_SOURCES
+from slurper.wd_raw_item import WD_OTHER_SOURCES
 
 
 class Command(BaseCommand):

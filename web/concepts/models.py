@@ -74,11 +74,11 @@ class Item(models.Model):
         def key():
             SOURCES = [
                 Item.Source.WIKIDATA,
+                Item.Source.WIKIPEDIA_EN,
                 Item.Source.NLAB,
                 Item.Source.MATHWORLD,
                 Item.Source.PROOF_WIKI,
                 Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS,
-                Item.Source.WIKIPEDIA_EN,
                 Item.Source.AGDA_UNIMATH,
             ]
             return lambda item: SOURCES.index(item.source)

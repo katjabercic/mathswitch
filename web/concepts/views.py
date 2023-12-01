@@ -25,7 +25,9 @@ def home(request):
         "concepts": autocomplete_names,
         "number_of_links": {
             "wikidata": Item.objects.filter(source=Item.Source.WIKIDATA).count(),
-            "wikipedia_en": Item.objects.filter(source=Item.Source.WIKIPEDIA_EN).count(),
+            "wikipedia_en": Item.objects.filter(
+                source=Item.Source.WIKIPEDIA_EN
+            ).count(),
             "nlab": Item.objects.filter(source=Item.Source.NLAB).count(),
             "mathworld": Item.objects.filter(source=Item.Source.MATHWORLD).count(),
             "proof_wiki": Item.objects.filter(source=Item.Source.PROOF_WIKI).count(),
@@ -53,8 +55,5 @@ def redirect_item_to_concept(request, source, identifier):
 
 def results(request, query):
     concepts = Concept.objects.filter(name__contains=query)
-    context = {
-        "query": query,
-        "results": [concept.name for concept in concepts]
-        }
+    context = {"query": query, "results": [concept.name for concept in concepts]}
     return render(request, "results.html", context)

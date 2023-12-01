@@ -1,4 +1,5 @@
 from typing import Optional
+
 from concepts.models import Item, Link
 
 WD_OTHER_SOURCES = {
@@ -17,12 +18,12 @@ WD_OTHER_SOURCES = {
     Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS: {
         "wd_property": "wdt:P7554",
         "json_key": "eomID",
-    }
+    },
 }
 # Wikipedia is dealt with elsewhere
 
-class BaseWdRawItem:
 
+class BaseWdRawItem:
     def __init__(self, source, json_item):
         self.source = source
         self.raw = json_item
@@ -64,18 +65,18 @@ class BaseWdRawItem:
 
     def item_exists(self):
         return self._get_item_queryset().exists()
-    
+
     def get_item(self) -> Optional[Item]:
         return self._get_item_queryset().first()
-    
+
     def yield_switched_if_not_exists(self, source):
         switched = self.switch_source_to(source)
         if not switched.item_exists():
             yield switched.to_item()
-    
+
     def save_link_to(self, source):
         target = self.switch_source_to(source)
-        if target is not None: 
+        if target is not None:
             destinationItem = target.get_item()
             if self.item is not None and destinationItem is not None:
                 Link.save_new(self.item, destinationItem, Link.Label.WIKIDATA)
@@ -130,6 +131,7 @@ class WdRawItem(BaseWdRawItem):
             if self.has_source(source):
                 self.save_link_to(source)
 
+
 class WpENRawItem(BaseWdRawItem):
     def __init__(self, json_item):
         super().__init__(Item.Source.WIKIPEDIA_EN, json_item)
@@ -159,6 +161,7 @@ class OtherWdRawItem(BaseWdRawItem):
         super().save_links()
         # link back to WD items
         self.save_link_to(WdRawItem(self.raw))
+
 
 class nLabRawItem(OtherWdRawItem):
     def __init__(self, json_item):
