@@ -69,11 +69,6 @@ class BaseWdRawItem:
     def get_item(self) -> Optional[Item]:
         return self._get_item_queryset().first()
 
-    def yield_switched_if_not_exists(self, source):
-        switched = self.switch_source_to(source)
-        if not switched.item_exists():
-            yield switched.to_item()
-
     def save_link_to(self, source):
         target = self.switch_source_to(source)
         if target is not None:

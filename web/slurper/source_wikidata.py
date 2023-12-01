@@ -75,9 +75,14 @@ WHERE {
             raw_item = BaseWdRawItem.raw_item(self.source, json_item)
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
-                raw_item.yield_switched_if_not_exists(Item.Source.WIKIDATA)
+                raw_item_wd = raw_item.switch_source_to(Item.Source.WIKIDATA)
+                if not raw_item_wd.item_exists():
+                    yield raw_item_wd.to_item()
             if raw_item.has_source(Item.Source.WIKIPEDIA_EN):
-                raw_item.yield_switched_if_not_exists(Item.Source.WIKIPEDIA_EN)
+                raw_item_wp_en = raw_item.switch_source_to(Item.Source.WIKIPEDIA_EN)
+                if not raw_item_wp_en.item_exists():
+                    yield raw_item_wp_en.to_item()
+                
 
     def save_items(self):
         for item in self.get_items():
