@@ -82,7 +82,6 @@ WHERE {
                 raw_item_wp_en = raw_item.switch_source_to(Item.Source.WIKIPEDIA_EN)
                 if not raw_item_wp_en.item_exists():
                     yield raw_item_wp_en.to_item()
-                
 
     def save_items(self):
         for item in self.get_items():
