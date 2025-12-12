@@ -1,4 +1,6 @@
 import logging
+import time
+import urllib.parse
 
 import requests
 from concepts.models import Item
@@ -6,11 +8,15 @@ from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 
 
+# Wikipedia API contact email (required by Wikipedia API guidelines)
+# Set to None to disable Wikipedia article fetching
+WIKIPEDIA_CONTACT_EMAIL = None
+
 # Wikidata entities to exclude from queries (natural numbers and positive integers)
-# TODO SST: Ask Katja: whether to add all found
-#   1. Should I put all found? Most likely yes
-#   2. Use categorization results to exclude them in further uses
 KNOWN_EXCLUDED_CATEGORIES = ["wd:Q21199", "wd:Q28920044"]
+
+# Flag to track if we've logged the missing email warning
+_missing_email_logged = False
 
 
 # These are added to every query:
@@ -73,7 +79,6 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
             + (f"LIMIT {limit}" if limit is not None else "")
         )
         self.raw_data = self.fetch_json()
-        self.article_text = self.fetch_articles()
 
 
     def _sparql_source_vars_select(self):
@@ -99,43 +104,85 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
         )
         return response.json()["results"]["bindings"]
 
-    def fetch_articles(self):
-        """Fetch Wikipedia article text for items with wp_en links."""
-        article_texts = {}
+    def fetch_article(self, json_item, index=None, total=None):
+        global _missing_email_logged
 
-        for json_item in self.raw_data:
-            # Only fetch if Wikipedia link exists
-            if "wp_en" not in json_item:
-                continue
+        # Check if contact email is configured
+        if WIKIPEDIA_CONTACT_EMAIL is None:
+            if not _missing_email_logged:
+                logging.log(
+                    logging.WARNING,
+                    "WIKIPEDIA_CONTACT_EMAIL is not set. Wikipedia article fetching is disabled. "
+                    "Please set WIKIPEDIA_CONTACT_EMAIL at the top of source_wikidata.py to enable article fetching.",
+                )
+                _missing_email_logged = True
+            return None
 
-            wp_url = json_item["wp_en"]["value"]
-            article_title = wp_url.split("/wiki/")[-1]
+        wp_url = json_item["wp_en"]["value"]
+        # Decode URL-encoded characters (e.g., %E2%80%93 becomes –)
+        article_title = urllib.parse.unquote(wp_url.split("/wiki/")[-1])
 
-            api_url = "https://en.wikipedia.org/w/api.php"
-            params = {
-                "action": "query",
-                "format": "json",
-                "titles": article_title,
-                "prop": "extracts",
-                "explaintext": True,
-                "exsectionformat": "plain",
-            }
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "application/json",
-                "Accept-Language": "en-US,en;q=0.9",
-            }
-
+        if index is not None and total is not None:
+            logging.log(
+                logging.INFO,
+                f"Fetching Wikipedia article [{index}/{total}]: {article_title}",
+            )
+        else:
+            logging.log(
+                logging.INFO,
+                f"Fetching Wikipedia article: {article_title}",
+            )
+        api_url = "https://en.wikipedia.org/w/api.php"
+        params = {
+            "action": "query",
+            "format": "json",
+            "titles": article_title,
+            "prop": "extracts",
+            "explaintext": True,
+            "exsectionformat": "plain",
+        }
+        headers = {
+            "User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        # Retry logic with exponential backoff
+        max_retries = 3
+        retry_delay = 1  # Start with 1 second
+        success = False
+        for attempt in range(max_retries):
             try:
-                response = requests.get(api_url, params=params, headers=headers)
+                # Rate limiting: delay between requests (100 req/s max)
+                time.sleep(0.01)
+
+                # Timeout: (connect_timeout, read_timeout) in seconds
+                response = requests.get(api_url, params=params, headers=headers, timeout=(5, 30))
+
+                # Handle rate limiting
+                if response.status_code in (429, 403):
+                    if attempt < max_retries - 1:
+                        logging.log(
+                            logging.WARNING,
+                            f"Rate limited for {article_title}, retrying in {retry_delay}s (attempt {attempt + 1}/{max_retries})",
+                        )
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                        continue
+                    else:
+                        logging.log(
+                            logging.ERROR,
+                            f"Failed to fetch {article_title} after {max_retries} attempts (rate limited). Skipping article.",
+                        )
+                        break
+
                 response.raise_for_status()
 
                 if not response.text:
                     logging.log(
                         logging.WARNING,
-                        f"Empty response for Wikipedia article: {article_title}",
+                        f"Empty response for Wikipedia article: {article_title}. Skipping article.",
                     )
-                    continue
+                    break
 
                 data = response.json()
                 pages = data.get("query", {}).get("pages", {})
@@ -143,24 +190,35 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 # Get the first (and only) page
                 for page_id, page_data in pages.items():
                     if "extract" in page_data:
-                        # Use Wikidata ID as key
-                        wd_id = json_item["item"]["value"]
-                        article_texts[wd_id] = page_data["extract"]
-                        break
-            except Exception as e:
-                logging.log(
-                    logging.WARNING,
-                    f"Failed to fetch Wikipedia article for {article_title}: {e}",
-                )
+                        success = True
+                        return page_data["extract"]
 
-        return article_texts
+                # Success, break retry loop
+                break
+
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    logging.log(
+                        logging.WARNING,
+                        f"Request failed for {article_title}: {e}, retrying in {retry_delay}s",
+                    )
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    logging.log(
+                        logging.ERROR,
+                        f"Failed to fetch {article_title} after {max_retries} attempts: {e}. Skipping article.",
+                    )
+        if not success and "wp_en" in json_item:
+            logging.log(
+                logging.INFO,
+                f"Article {article_title} will have null value (fetch failed or empty)",
+            )
+
+        return None
 
     def get_items(self):
         for json_item in self.raw_data:
-            wd_id = json_item["item"]["value"]
-            if wd_id in self.article_text:
-                json_item["article_text"] = {"value": self.article_text[wd_id]}
-
             raw_item = BaseWdRawItem.raw_item(self.source, json_item)
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
@@ -168,6 +226,12 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 if not raw_item_wd.item_exists():
                     yield raw_item_wd.to_item()
             if raw_item.has_source(Item.Source.WIKIPEDIA_EN):
+                # Fetch Wikipedia article if available
+                if "wp_en" in json_item and "article_text" not in json_item:
+                    article_text = self.fetch_article(json_item)
+                    if article_text is not None:
+                        json_item["article_text"] = {"value": article_text}
+
                 raw_item_wp_en = raw_item.switch_source_to(Item.Source.WIKIPEDIA_EN)
                 if not raw_item_wp_en.item_exists():
                     yield raw_item_wp_en.to_item()
