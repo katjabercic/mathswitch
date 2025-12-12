@@ -1,2 +1,16 @@
 Django~=4.2.6
 requests~=2.31.0
+spacy~=3.7.0
+scispacy~=0.5.4
+
+# LLM dependencies (optional, install based on which LLM you want to use)
+# For paid APIs:
+# openai>=1.0.0  # Uncomment for OpenAI GPT models
+# anthropic>=0.7.0  # Uncomment for Anthropic Claude
+
+# For free local models (recommended):
+langchain-huggingface>=0.0.1  # For HuggingFace models
+langchain-community>=0.0.1  # For Ollama and other local models
+transformers>=4.35.0  # Required by HuggingFace models
+torch>=2.0.0  # Required by HuggingFace models
+accelerate>=0.24.0  # Speeds up model loading

@@ -88,6 +88,9 @@ class Item(models.Model):
     url = models.URLField(max_length=200)
     name = models.CharField(max_length=200, null=True)
     description = models.TextField(null=True)
+    keywords = models.TextField(null=True, blank=True)
+    article_text = models.TextField(null=True, blank=True)
+    aliases = models.TextField(null=True, blank=True)
     concept = models.ForeignKey(
         Concept,
         models.SET_NULL,
@@ -159,3 +162,30 @@ class Link(models.Model):
 
     def __str__(self):
         return f"{self.source} -[{self.get_label_display()}]-> {self.destination}"
+
+
+class CategorizerResult(models.Model):
+    """
+    Stores the result of categorizing an item using an LLM.
+    """
+
+    item = models.ForeignKey(
+        Item, on_delete=models.CASCADE, related_name="categorizer_results"
+    )
+    llm_type = models.CharField(max_length=100)
+    raw_result = models.TextField()
+    result_answer = models.BooleanField()
+    result_confidence = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["item", "llm_type"]),
+            models.Index(fields=["result_answer"]),
+            models.Index(fields=["result_confidence"]),
+        ]
+
+    def __str__(self):
+        return f"{self.item} - {self.llm_type}: {self.result_answer} ({self.result_confidence}%)"
