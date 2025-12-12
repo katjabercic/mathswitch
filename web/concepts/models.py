@@ -188,4 +188,7 @@ class CategorizerResult(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.item} - {self.llm_type}: {self.result_answer} ({self.result_confidence}%)"
+        return (
+            f"{self.item} - {self.llm_type}: "
+            f"{self.result_answer} ({self.result_confidence}%)"
+        )

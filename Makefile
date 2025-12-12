@@ -9,3 +9,8 @@ start:
 
 compute-concepts:
 	python ./web/manage.py compute_concepts
+
+fix-files:
+	python3 -m black .
+	python3 -m isort .
+	python3 -m flake8 .

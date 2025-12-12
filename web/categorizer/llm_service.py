@@ -28,12 +28,24 @@ class LLMService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.llm_handlers = {
-            LLMType.OPENAI_GPT4: lambda llm_type, prompt: self._call_openai(llm_type, prompt),
-            LLMType.OPENAI_GPT35: lambda llm_type, prompt: self._call_openai(llm_type, prompt),
-            LLMType.ANTHROPIC_CLAUDE: lambda llm_type, prompt: self._call_anthropic(prompt),
-            LLMType.HUGGINGFACE_FLAN_T5: lambda llm_type, prompt: self._call_huggingface("google/flan-t5-base", prompt),
-            LLMType.HUGGINGFACE_GPT2: lambda llm_type, prompt: self._call_huggingface("gpt2", prompt),
-            LLMType.HUGGINGFACE_DIALOGPT: lambda llm_type, prompt: self._call_huggingface("microsoft/DialoGPT-medium", prompt),
+            LLMType.OPENAI_GPT4: lambda llm_type, prompt: self._call_openai(
+                llm_type, prompt
+            ),
+            LLMType.OPENAI_GPT35: lambda llm_type, prompt: self._call_openai(
+                llm_type, prompt
+            ),
+            LLMType.ANTHROPIC_CLAUDE: lambda llm_type, prompt: self._call_anthrpc(
+                prompt
+            ),
+            LLMType.HUGGINGFACE_FLAN_T5: lambda llm_type, prompt: self._call_hgf(
+                "google/flan-t5-base", prompt
+            ),
+            LLMType.HUGGINGFACE_GPT2: lambda llm_type, prompt: self._call_hgf(
+                "gpt2", prompt
+            ),
+            LLMType.HUGGINGFACE_DIALOGPT: lambda llm_type, prompt: self._call_hgf(
+                "microsoft/DialoGPT-medium", prompt
+            ),
             LLMType.OLLAMA: lambda llm_type, prompt: self._call_ollama(prompt),
         }
 
@@ -92,7 +104,7 @@ class LLMService:
             self.logger.error(f"OpenAI API call failed: {e}")
             raise
 
-    def _call_anthropic(self, prompt: str) -> str:
+    def _call_anthrpc(self, prompt: str) -> str:
         """Call Anthropic Claude API"""
         try:
             import anthropic
@@ -121,7 +133,7 @@ class LLMService:
             self.logger.error(f"Anthropic API call failed: {e}")
             raise
 
-    def _call_huggingface(self, model_id: str, prompt: str) -> str:
+    def _call_hgf(self, model_id: str, prompt: str) -> str:
         """
         Call HuggingFace models using langchain.
 
@@ -156,7 +168,11 @@ class LLMService:
             # Create the HuggingFace pipeline
             hf = HuggingFacePipeline.from_model_id(
                 model_id=model_id,
-                task="text-generation" if "gpt" in model_id.lower() else "text2text-generation",
+                task=(
+                    "text-generation"
+                    if "gpt" in model_id.lower()
+                    else "text2text-generation"
+                ),
                 pipeline_kwargs=pipeline_kwargs,
             )
 

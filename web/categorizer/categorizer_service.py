@@ -1,8 +1,9 @@
 import json
 import logging
 import re
-from concepts.models import Item, CategorizerResult
+
 from categorizer.llm_service import LLMService, LLMType
+from concepts.models import CategorizerResult, Item
 
 # Free LLM types to use for categorization
 LLM_JUDGE_POOL = [
@@ -33,12 +34,12 @@ class CategorizerService:
             queryset = queryset[:limit]
 
         total = queryset.count()
-        self.logger.info(f"Categorizing {total} items using {len(LLM_JUDGE_POOL)} free LLMs")
+        self.logger.info(
+            f"Categorizing {total} items using {len(LLM_JUDGE_POOL)} free LLMs"
+        )
 
         for i, item in enumerate(queryset):
-            self.logger.info(
-                f"Processing item {i + 1}/{total}: {item.identifier}"
-            )
+            self.logger.info(f"Processing item {i + 1}/{total}: {item.identifier}")
             self.categorize_item(item)
 
         self.logger.info("Categorization complete")
@@ -46,14 +47,17 @@ class CategorizerService:
     def categorize_item(
         self,
         item,
-        predicate: str = "Is the given concept a mathematical concept, given the name, description, keywords, and article text?"
+        predicate: str = "Is the given concept a mathematical concept,"
+        " given the name, description, "
+        "keywords, and article text?",
     ):
         """
         Categorize a single item using all free LLM types.
 
         Args:
             item: Item instance to categorize
-            predicate: The question to evaluate (default: checks if it's a mathematical concept)
+            predicate: The question to evaluate (default: checks if it's
+            a mathematical concept)
 
         Returns:
             List of categorization results from all LLMs
@@ -68,7 +72,10 @@ class CategorizerService:
             try:
                 self.logger.info(f"Calling {llm_type.value} for {item.name}")
                 raw_result = self.llm_service.call_llm(llm_type, prompt)
-                self.logger.info(f"Categorized {item.name} with {llm_type.value}: {raw_result[:100]}...")
+                self.logger.info(
+                    f"Categorized {item.name} with {llm_type.value}: "
+                    f"{raw_result[:100]}..."
+                )
 
                 parsed_result = self._parse_categorization_result(raw_result)
 
@@ -89,7 +96,9 @@ class CategorizerService:
 
                 results.append(parsed_result)
             except Exception as e:
-                self.logger.error(f"Failed to categorize {item.name} with {llm_type.value}: {e}")
+                self.logger.error(
+                    f"Failed to categorize {item.name} with {llm_type.value}: {e}"
+                )
                 # Continue with other LLMs even if one fails?
                 continue
 
@@ -106,7 +115,8 @@ class CategorizerService:
         Returns:
             Formatted prompt string
         """
-        system_prompt = """You are a categorization judge. Your task is to evaluate whether a given concept satisfies a specific predicate.
+        system_prompt = """You are a categorization judge. Your task is to
+         evaluate whether a given concept satisfies a specific predicate.
 
 You must respond with a structured answer containing:
 1. answer: true or false (boolean)
@@ -173,7 +183,9 @@ Please provide your evaluation in JSON format."""
                 parsed = json.loads(result)
 
             if "answer" not in parsed or "confidence" not in parsed:
-                raise ValueError("Response missing required fields 'answer' or 'confidence'")
+                raise ValueError(
+                    "Response missing required fields 'answer' or 'confidence'"
+                )
 
             answer = parsed["answer"]
             if isinstance(answer, str):
@@ -183,10 +195,7 @@ Please provide your evaluation in JSON format."""
             if not 0 <= confidence <= 100:
                 raise ValueError(f"Confidence must be between 0-100, got {confidence}")
 
-            return {
-                "answer": bool(answer),
-                "confidence": confidence
-            }
+            return {"answer": bool(answer), "confidence": confidence}
 
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse JSON response: {result}")

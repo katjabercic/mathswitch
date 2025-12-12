@@ -3,9 +3,7 @@ import spacy
 # TODO SST: Move to readme.md
 # Load the scientific English model from scispacy
 # Note: You need to download this model first with:
-#   make install-scispacy
-# Or directly:
-#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
+#  make install-scispacy
 
 # Lazy-loaded spaCy model
 _nlp = None

@@ -7,7 +7,6 @@ from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 
-
 # Wikipedia API contact email (required by Wikipedia API guidelines)
 # Set to None to disable Wikipedia article fetching
 WIKIPEDIA_CONTACT_EMAIL = None
@@ -26,12 +25,15 @@ _missing_email_logged = False
 #   - Excludes humans (FILTER NOT EXISTS)
 #   - Label service: Automatically fetches English labels and descriptions
 #
-#   The class fetches mathematical concepts from Wikidata while filtering out unwanted items like people and natural numbers.
+#   The class fetches mathematical concepts from Wikidata while
+#   filtering out unwanted items like people and natural numbers.
+
 
 class WikidataSlurper:
     SPARQL_URL = "https://query.wikidata.org/sparql"
 
-    SPARQL_QUERY_OPTIONS = """
+    SPARQL_QUERY_OPTIONS = (
+        """
   OPTIONAL
   { ?item wdt:P18 ?image . }
   OPTIONAL
@@ -44,7 +46,9 @@ class WikidataSlurper:
   { ?item skos:altLabel ?itemAltLabel . FILTER (lang(?itemAltLabel) = "en") }
   # except for natural numbers and positive integers
   FILTER NOT EXISTS {
-    VALUES ?excludedType { """ + " ".join(KNOWN_EXCLUDED_CATEGORIES) + """ }
+    VALUES ?excludedType { """
+        + " ".join(KNOWN_EXCLUDED_CATEGORIES)
+        + """ }
     ?item wdt:P31 ?excludedType .
   }
   # except for humans
@@ -53,6 +57,7 @@ class WikidataSlurper:
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 """
+    )
 
     def __init__(self, source, query, limit=None):
         self.source = source
@@ -71,15 +76,12 @@ WHERE {
             + self.SPARQL_QUERY_OPTIONS
             + """
 GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
-            + " ".join(
-                [f"?{src['json_key']}" for src in WD_OTHER_SOURCES.values()]
-            )
+            + " ".join([f"?{src['json_key']}" for src in WD_OTHER_SOURCES.values()])
             + """
 """
             + (f"LIMIT {limit}" if limit is not None else "")
         )
         self.raw_data = self.fetch_json()
-
 
     def _sparql_source_vars_select(self):
         def to_var(source_dict):
@@ -112,8 +114,10 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
             if not _missing_email_logged:
                 logging.log(
                     logging.WARNING,
-                    "WIKIPEDIA_CONTACT_EMAIL is not set. Wikipedia article fetching is disabled. "
-                    "Please set WIKIPEDIA_CONTACT_EMAIL at the top of source_wikidata.py to enable article fetching.",
+                    "WIKIPEDIA_CONTACT_EMAIL is not set. "
+                    "Wikipedia article fetching is disabled. "
+                    "Please set WIKIPEDIA_CONTACT_EMAIL at the top of "
+                    "source_wikidata.py to enable article fetching.",
                 )
                 _missing_email_logged = True
             return None
@@ -156,14 +160,17 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 time.sleep(0.01)
 
                 # Timeout: (connect_timeout, read_timeout) in seconds
-                response = requests.get(api_url, params=params, headers=headers, timeout=(5, 30))
+                response = requests.get(
+                    api_url, params=params, headers=headers, timeout=(5, 30)
+                )
 
                 # Handle rate limiting
                 if response.status_code in (429, 403):
                     if attempt < max_retries - 1:
                         logging.log(
                             logging.WARNING,
-                            f"Rate limited for {article_title}, retrying in {retry_delay}s (attempt {attempt + 1}/{max_retries})",
+                            f"Rate limited for {article_title}, retrying in "
+                            f"{retry_delay}s (attempt {attempt + 1}/{max_retries})",
                         )
                         time.sleep(retry_delay)
                         retry_delay *= 2  # Exponential backoff
@@ -171,7 +178,8 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                     else:
                         logging.log(
                             logging.ERROR,
-                            f"Failed to fetch {article_title} after {max_retries} attempts (rate limited). Skipping article.",
+                            f"Failed to fetch {article_title} after "
+                            f"{max_retries} attempts (rate limited). Skipping article.",
                         )
                         break
 
@@ -180,7 +188,8 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 if not response.text:
                     logging.log(
                         logging.WARNING,
-                        f"Empty response for Wikipedia article: {article_title}. Skipping article.",
+                        f"Empty response for Wikipedia article: "
+                        f"{article_title}. Skipping article.",
                     )
                     break
 
@@ -200,14 +209,16 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 if attempt < max_retries - 1:
                     logging.log(
                         logging.WARNING,
-                        f"Request failed for {article_title}: {e}, retrying in {retry_delay}s",
+                        f"Request failed for {article_title}: "
+                        f"{e}, retrying in {retry_delay}s",
                     )
                     time.sleep(retry_delay)
                     retry_delay *= 2
                 else:
                     logging.log(
                         logging.ERROR,
-                        f"Failed to fetch {article_title} after {max_retries} attempts: {e}. Skipping article.",
+                        f"Failed to fetch {article_title}"
+                        f" after {max_retries} attempts: {e}. Skipping article.",
                     )
         if not success and "wp_en" in json_item:
             logging.log(
