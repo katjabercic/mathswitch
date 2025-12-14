@@ -132,14 +132,14 @@ yes,85
         item_info_parts = [f"Name: {item.name}"]
 
         if item.description:
-            item_info_parts.append(f"Description: {item.description}")
+            item_info_parts.append(f"Description: {item.description[:100]}")
 
         if item.keywords:
-            item_info_parts.append(f"Keywords: {item.keywords}")
+            item_info_parts.append(f"Keywords: {item.keywords[:200]}")
 
         if item.article_text:
-            # Truncate article text to 5000 characters
-            article_text = item.article_text[:5000]
+            # Truncate article text to 1000 characters
+            article_text = item.article_text[:1000]
             item_info_parts.append(f"Article text: {article_text}")
 
         item_info = "\n".join(item_info_parts)
