@@ -1,5 +1,5 @@
 Django~=4.2.6
-requests~=2.31.0
+requests~=2.32.5
 spacy~=3.7.0 --prefer-binary
 scispacy~=0.6.2
 
@@ -8,11 +8,11 @@ scispacy~=0.6.2
 # openai>=1.0.0  # Uncomment for OpenAI GPT models
 # anthropic>=0.7.0  # Uncomment for Anthropic Claude
 
-# For free local models (recommended):
-langchain-huggingface>=0.0.1  # For HuggingFace models
-langchain-community>=0.0.1  # For Ollama and other local models
+# For free local models:
+langchain-huggingface==0.3.1  # For HuggingFace models
+langchain-community==0.3.27  # For Ollama and other local models
 # Required by HuggingFace models
-transformers>=4.35.0
-torch>=2.0.0
+transformers~=4.57.0
+torch~=2.9.0
 # Speeds up model loading
-accelerate>=0.24.0
+accelerate~=1.12.0
