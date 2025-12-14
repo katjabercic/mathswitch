@@ -10,12 +10,62 @@ from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 # Wikipedia API contact email (required by Wikipedia API guidelines)
 # Set to None to disable Wikipedia article fetching
 WIKIPEDIA_CONTACT_EMAIL = None
-
-# Wikidata entities to exclude from queries (natural numbers and positive integers)
-KNOWN_EXCLUDED_CATEGORIES = ["wd:Q21199", "wd:Q28920044"]
-
-# Flag to track if we've logged the missing email warning
 _missing_email_logged = False
+
+# Wikidata entities to exclude from queries
+KNOWN_EXCLUDED_CATEGORIES = [
+    # Natural numbers
+    "wd:Q21199",
+    # positive integers
+    "wd:Q28920044",
+    # countries
+    "wd:Q6256",
+    # philosophical concepts
+    "wd:Q714737",
+]
+
+
+def _load_excluded_categories_from_results():
+    """
+    Load Wikidata identifiers of items that have been categorized as "no"
+    with confidence > 49%, to be excluded from future queries.
+
+    Returns a list of Wikidata entity IDs in the format ["wd:Q12345", ...].
+    """
+    try:
+        from concepts.models import CategorizerResult
+        from django.db.models import Avg
+
+        excluded_items = (
+            CategorizerResult.objects.filter(
+                result_answer=False, result_confidence__gt=49
+            )
+            .values("item__identifier", "item__source")
+            .annotate(avg_confidence=Avg("result_confidence"))
+            .filter(avg_confidence__gt=49, item__source=Item.Source.WIKIDATA)
+            .distinct()
+        )
+
+        categories = [f"wd:{item['item__identifier']}" for item in excluded_items]
+
+        if categories:
+            logging.log(
+                logging.INFO,
+                f"Loaded {len(categories)} excluded categories "
+                f"from categorizer results",
+            )
+
+        return categories
+    except Exception as e:
+        logging.log(
+            logging.DEBUG, f"Could not load excluded categories from results: {e}"
+        )
+        return []
+
+
+RESULT_EXCLUDED_CATEGORIES = _load_excluded_categories_from_results()
+
+EXCLUDED_CATEGORIES = KNOWN_EXCLUDED_CATEGORIES + RESULT_EXCLUDED_CATEGORIES
 
 
 # These are added to every query:
@@ -47,7 +97,7 @@ class WikidataSlurper:
   # except for natural numbers and positive integers
   FILTER NOT EXISTS {
     VALUES ?excludedType { """
-        + " ".join(KNOWN_EXCLUDED_CATEGORIES)
+        + " ".join(EXCLUDED_CATEGORIES)
         + """ }
     ?item wdt:P31 ?excludedType .
   }

@@ -160,8 +160,7 @@ class LLMService:
                 "temperature": 0.7,
             }
 
-            # TODO SST: Remove the whole model
-            # Add pad_token_id for DialoGPT
+            # Add pad_token_id for DialoGPT and GPT2
             if "DialoGPT" in model_id or "gpt2" in model_id:
                 pipeline_kwargs["pad_token_id"] = 50256
 
@@ -177,6 +176,24 @@ class LLMService:
             )
 
             response = hf.invoke(prompt)
+
+            if "gpt2" in model_id.lower():
+                response = response.removeprefix(prompt).strip()
+
+                lines = response.split("\n")
+                cleaned_lines = []
+                for line in lines:
+                    if line.strip() and line.strip() != "---":
+                        cleaned_lines.append(line)
+
+                response = "\n".join(cleaned_lines).strip()
+
+                # If we got nothing useful, return a default response
+                if not response:
+                    self.logger.warning(
+                        "GPT2 produced no useful output, " "returning default: 'no, 0'"
+                    )
+                    response = "no, 0"
 
             self.logger.info(f"HuggingFace model response length: {len(response)}")
             return response

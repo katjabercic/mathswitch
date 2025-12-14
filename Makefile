@@ -10,6 +10,9 @@ start:
 compute-concepts:
 	python ./web/manage.py compute_concepts
 
+categorize:
+	python ./web/manage.py categorize --limit 10
+
 fix-files:
 	python3 -m black .
 	python3 -m isort .

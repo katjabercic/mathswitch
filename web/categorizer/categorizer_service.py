@@ -1,6 +1,4 @@
-import json
 import logging
-import re
 
 from categorizer.llm_service import LLMService, LLMType
 from concepts.models import CategorizerResult, Item
@@ -77,14 +75,19 @@ class CategorizerService:
                     f"{raw_result[:100]}..."
                 )
 
+                print(f"{raw_result}")
                 parsed_result = self._parse_categorization_result(raw_result)
+
+                confidence = parsed_result["confidence"]
+                if confidence is None:
+                    confidence = 50
 
                 categorizer_result = CategorizerResult.objects.create(
                     item=item,
                     llm_type=llm_type.value,
                     raw_result=raw_result,
                     result_answer=parsed_result["answer"],
-                    result_confidence=parsed_result["confidence"],
+                    result_confidence=confidence,
                 )
                 categorizer_result.save()
 
@@ -122,11 +125,9 @@ You must respond with a structured answer containing:
 1. answer: true or false (boolean)
 2. confidence: a number from 0 to 100 (representing your confidence percentage)
 
-Format your response as JSON:
-{
-  "answer": true,
-  "confidence": 85
-}"""
+IMPORTANT: Format your response as comma-separated string:
+yes,85
+"""
 
         item_info_parts = [f"Name: {item.name}"]
 
@@ -157,16 +158,17 @@ PREDICATE TO EVALUATE:
 
 ---
 
-Please provide your evaluation in JSON format."""
+Please provide your evaluation in the comma-separated format specified above."""
 
         return prompt
 
     def _parse_categorization_result(self, result: str) -> dict:
         """
-        Parse the LLM's JSON response.
+        Parse the LLM's comma-separated response.
 
         Args:
-            result: The raw response from the LLM
+            result: The raw response from the LLM (expected format: "yes,85"
+            or "no,75", "yes ---")
 
         Returns:
             Dictionary with 'answer' (bool) and 'confidence' (int) keys
@@ -175,31 +177,63 @@ Please provide your evaluation in JSON format."""
             ValueError: If the response cannot be parsed
         """
         try:
-            json_match = re.search(r'\{[^}]*"answer"[^}]*\}', result, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-                parsed = json.loads(json_str)
-            else:
-                parsed = json.loads(result)
+            # Clean the result string
+            result = result.strip()
 
-            if "answer" not in parsed or "confidence" not in parsed:
+            # Split by comma (with or without space) or just space
+            # Try separators in order of specificity: ", ", ",", " "
+            if ", " in result:
+                parts = result.split(", ", 1)
+            elif "," in result:
+                parts = result.split(",", 1)
+            else:
+                parts = result.split(" ", 1)
+
+            if len(parts) == 1:
+                # Only answer provided, no confidence
+                answer_str = parts[0].strip().lower()
+                confidence = None
+            elif len(parts) == 2:
+                # Both answer and confidence provided
+                answer_str = parts[0].strip().lower()
+                confidence_str = parts[1].strip()
+
+                # Parse confidence if provided
+                if confidence_str:
+                    try:
+                        confidence = int(confidence_str)
+                        if not 0 <= confidence <= 100:
+                            self.logger.warning(
+                                f"Confidence {confidence} out of range [0-100], "
+                                f"setting to None"
+                            )
+                            confidence = None
+                    except ValueError:
+                        self.logger.warning(
+                            f"Invalid confidence value '{confidence_str}', "
+                            f"setting to None"
+                        )
+                        confidence = None
+                else:
+                    confidence = None
+            else:
                 raise ValueError(
-                    "Response missing required fields 'answer' or 'confidence'"
+                    f"Expected format 'answer' or 'answer,confidence', got: {result}"
                 )
 
-            answer = parsed["answer"]
-            if isinstance(answer, str):
-                answer = answer.lower() in ("true", "yes", "1")
+            # Parse answer - accept yes/true/1 as True, no/false/0 as False
+            if answer_str in ("yes", "true", "1"):
+                answer = True
+            elif answer_str in ("no", "false", "0"):
+                answer = False
+            else:
+                raise ValueError(
+                    f"Invalid answer value: {answer_str}. "
+                    f"Expected yes/no, true/false, or 1/0"
+                )
 
-            confidence = int(parsed["confidence"])
-            if not 0 <= confidence <= 100:
-                raise ValueError(f"Confidence must be between 0-100, got {confidence}")
+            return {"answer": answer, "confidence": confidence}
 
-            return {"answer": bool(answer), "confidence": confidence}
-
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse JSON response: {result}")
-            raise ValueError(f"Invalid JSON response from LLM: {e}")
-        except (KeyError, ValueError) as e:
-            self.logger.error(f"Invalid response format: {result}")
+        except (ValueError, IndexError) as e:
+            self.logger.error(f"Failed to parse response: {result}")
             raise ValueError(f"Invalid response format: {e}")
