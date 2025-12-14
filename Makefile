@@ -1,8 +1,8 @@
 prepare-web:
 	pip install -r web/requirements.txt
 	cp web/.env.example web/.env
-	python manage.py migrate
-	python manage.py createsuperuser
+	python ./web/manage.py migrate
+	python ./web/manage.py createsuperuser
 
 install-dev:
 	pip install -r requirements.txt
@@ -14,10 +14,10 @@ start:
 	python ./web/manage.py runserver
 
 populate-db:
-	python manage.py import_wikidata
+	python ./web/manage.py import_wikidata
 
 clear-db:
-	python manage.py clear_wikidata
+	python ./web/manage.py clear_wikidata
 
 compute-concepts:
 	python ./web/manage.py compute_concepts
