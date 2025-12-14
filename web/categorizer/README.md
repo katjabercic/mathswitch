@@ -8,7 +8,7 @@ The categorizer module provides LLM-powered categorization of mathematical conce
 
 **For FREE local models (recommended):**
 ```bash
-pip install langchain-huggingface langchain-community transformers torch accelerate
+make install
 ```
 
 **For paid API models (optional):**
@@ -63,6 +63,8 @@ python manage.py categorize
 Categorize a limited number of items:
 ```bash
 python manage.py categorize --limit 10
+make categorize
+# OR
 ```
 
 Use a specific LLM provider:
