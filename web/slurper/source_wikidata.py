@@ -6,6 +6,7 @@ import requests
 from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
+
 from web.settings import WIKIPEDIA_CONTACT_EMAIL
 
 # Wikipedia API contact email (required by Wikipedia API guidelines)
