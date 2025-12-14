@@ -1,16 +1,14 @@
-install:
+prepare-web:
 	pip install -r web/requirements.txt
+	cp web/.env.example web/.env
+	python manage.py migrate
+	python manage.py createsuperuser
 
 install-dev:
 	pip install -r requirements.txt
 
 install-scispacy:
 	pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
-
-prepare-db:
-	pip install -r web/requirements.txt
-	python manage.py migrate
-	python manage.py createsuperuser
 
 start:
 	python ./web/manage.py runserver

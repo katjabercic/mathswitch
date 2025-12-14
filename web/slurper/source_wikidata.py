@@ -6,10 +6,10 @@ import requests
 from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
+from web.settings import WIKIPEDIA_CONTACT_EMAIL
 
 # Wikipedia API contact email (required by Wikipedia API guidelines)
 # Set to None to disable Wikipedia article fetching
-WIKIPEDIA_CONTACT_EMAIL = None
 _missing_email_logged = False
 
 # Wikidata entities to exclude from queries

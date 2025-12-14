@@ -9,16 +9,19 @@ For a demonstration of a page with at least one link, see for example `{baseurl}
 To install all the necessary Python packages, run:
 
 ```bash
-make install
+make prepare-web # Which does the necessary steps for env, db, superuser
 # OR
 pip install -r web/requirements.txt
+```
+
+Prepare an environment:
+```bash
+cp web/.env.example web/.env
 ```
 
 Next, to create a database, run:
 
 ```bash
-make prepare-db # which migrates db and creates superuser
-# OR
 python manage.py migrate
 ```
 
