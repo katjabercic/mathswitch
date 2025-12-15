@@ -1,6 +1,7 @@
 from typing import Optional
 
 from concepts.models import Item, Link
+from slurper.keyword_util import extract_keywords
 
 WD_OTHER_SOURCES = {
     Item.Source.NLAB: {
@@ -42,6 +43,18 @@ class BaseWdRawItem:
     def description(self):
         return None
 
+    def aliases(self):
+        """Get aliases (alternative labels) if available."""
+        if "aliases" in self.raw and self.raw["aliases"]["value"]:
+            return self.raw["aliases"]["value"]
+        return None
+
+    def article_text(self):
+        """Get the Wikipedia article text if available."""
+        if "article_text" in self.raw:
+            return self.raw["article_text"]["value"]
+        return None
+
     def has_source(self, source):
         if source == Item.Source.WIKIPEDIA_EN:
             return "wp_en" in self.raw
@@ -52,12 +65,26 @@ class BaseWdRawItem:
         return BaseWdRawItem.raw_item(source, self.raw)
 
     def to_item(self) -> Optional[Item]:
+        # Extract keywords from article text if available
+        article = self.article_text()
+        keywords = None
+
+        if article:
+            # Extract entities using spaCy
+            entities = extract_keywords(article)
+            # Convert to lowercase and create comma-separated string
+            keyword_list = [entity.text.lower() for entity in entities]
+            keywords = ", ".join(keyword_list) if keyword_list else None
+
         return Item(
             source=self.source,
             identifier=self.identifier(),
             url=self.url(),
             name=self.name(),
             description=self.description(),
+            keywords=keywords,
+            article_text=article,
+            aliases=self.aliases(),
         )
 
     def _get_item_queryset(self):

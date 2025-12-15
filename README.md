@@ -8,35 +8,87 @@ For a demonstration of a page with at least one link, see for example `{baseurl}
 
 To install all the necessary Python packages, run:
 
-    pip install -r requirements.txt
+```bash
+make prepare-web # Which does the necessary steps for env, db, superuser
+# OR
+pip install -r web/requirements.txt
+```
+
+Prepare an environment:
+```bash
+cp web/.env.example web/.env
+```
 
 Next, to create a database, run:
 
-    python manage.py migrate
+```bash
+python manage.py migrate
+```
 
 In order to use the administrative interface, you need to create an admin user:
 
-    python manage.py createsuperuser
+```bash
+python manage.py createsuperuser
+```
 
 Finally, to populate the database, run
 
-    python manage.py import_wikidata
+```bash
+python manage.py import_wikidata
+# OR
+make populate-db
+```
+
+  * In order to fetch wikipedia articles and extract keywords from them:
+    ```bash
+    make install-scispacy
+    ```
+    then configure your email `WIKIPEDIA_CONTACT_EMAIL` in [source_wikidata.py](web/slurper/source_wikidata.py)
+    * This is needed
+  * Then run the database population (make sure your db is cleared)
+
+
 
 If you ever want to repopulate the database, you can clear it using
 
-    python manage.py clear_wikidata
+```bash
+python manage.py clear_wikidata
+```
+
+### To run the categorizer
+The categorizer is setup to work with several models, divided into free and paid.
+All of them are run locally, so expect some performance hits. The models are downloaded when the categorizer is
+ran initially, and by default the free models are used.
+
+The database needs to be filled in before running it, so:
+```bash
+make populate-db
+```
+then
+```bash
+make categorize
+```
+
+There are some known existing issues that have some inline fixes, such as `gpt2` getting stuck
+and returning the same prompt, then few times `---\n\n\n---`.
+
+For more details see [categorizer readme](web/categorizer/README.md).
 
 ## Notes for developers
 
 In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter.
-
-    pip install black isort flake8
+```bash
+make install-dev
+```
 
 You can run all three with
-
-    isort .
-    black .
-    flake8
+```bash
+make fix-files
+# Or manually
+isort .
+black .
+flake8
+```
 
 or set up a Git pre-commit hook by creating `.git/hooks/pre-commit` with the following contents:
 
@@ -47,35 +99,37 @@ black . && isort . && flake8
 ```
 
 Each time after you change a model, make sure to create the appropriate migrations:
-
-    python manage.py makemigrations
+```bash
+python manage.py makemigrations
+```
 
 To update the database with the new model, run:
-
+```bash
     python manage.py migrate
+```
 
 ## Instructions for Katja to update the live version
-
-  sudo systemctl stop mathswitch
-  cd mathswitch
-  git pull
-  source venv/bin/activate
-  cd web
-  ./manage.py rebuild_db
-  sudo systemctl start mathswitch
-
+```bash
+sudo systemctl stop mathswitch
+cd mathswitch
+git pull
+source venv/bin/activate
+cd web
+./manage.py rebuild_db
+sudo systemctl start mathswitch
+```
 ## WD item JSON example
 
-```
+```json
 {
-    'item': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q192276'}, 
-    'art': {'type': 'uri', 'value': 'https://en.wikipedia.org/wiki/Measure_(mathematics)'}, 
-    'image': {'type': 'uri', 'value': 'http://commons.wikimedia.org/wiki/Special:FilePath/Measure%20illustration%20%28Vector%29.svg'}, 
-    'mwID': {'type': 'literal', 'value': 'Measure'}, 
-    'itemLabel': {'xml:lang': 'en', 'type': 'literal', 'value': 'measure'}, 
-    'itemDescription': {'xml:lang': 'en', 'type': 'literal', 'value': 'function assigning numbers to some subsets of a set, which could be seen as a generalization of length, area, volume and integral'}, 
-    'eomID': {'type': 'literal', 'value': 'measure'}, 
-    'pwID': {'type': 'literal', 'value': 'Definition:Measure_(Measure_Theory)'
+    "item": {"type": "uri", "value": "http://www.wikidata.org/entity/Q192276"}, 
+    "art": {"type": "uri", "value": "https://en.wikipedia.org/wiki/Measure_(mathematics)"}, 
+    "image": {"type": "uri", "value": "http://commons.wikimedia.org/wiki/Special:FilePath/Measure%20illustration%20%28Vector%29.svg"}, 
+    "mwID": {"type": "literal", "value": "Measure"}, 
+    "itemLabel": {"xml:lang": "en", "type": "literal", "value": "measure"}, 
+    "itemDescription": {"xml:lang": "en", "type": "literal", "value": "function assigning numbers to some subsets of a set, which could be seen as a generalization of length, area, volume and integral"}, 
+    "eomID": {"type": "literal", "value": "measure"}, 
+    "pwID": {"type": "literal", "value": "Definition:Measure_(Measure_Theory)"}
 }
 ```
 
