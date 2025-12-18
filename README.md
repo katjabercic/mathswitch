@@ -6,6 +6,18 @@ For a demonstration of a page with at least one link, see for example `{baseurl}
 
 ## Notes on installation and usage
 
+To prepare pyenv (`venv`) make sure to have `pyenv` installed, then run
+```bash
+make prepare-env
+source venv/bin/activate
+```
+
+By default, the Mathswitch uses sqlite3 database, in order to use postgresql there is
+a provided `.env.example` config and Docker compose to run the database:
+```bash
+docker compose up -d
+```
+
 To install all the necessary Python packages, run:
 
 ```bash
@@ -22,19 +34,19 @@ cp web/.env.example web/.env
 Next, to create a database, run:
 
 ```bash
-python manage.py migrate
+python web/manage.py migrate
 ```
 
 In order to use the administrative interface, you need to create an admin user:
 
 ```bash
-python manage.py createsuperuser
+python web/manage.py createsuperuser
 ```
 
 Finally, to populate the database, run
 
 ```bash
-python manage.py import_wikidata
+python web/manage.py import_wikidata
 # OR
 make populate-db
 ```
@@ -52,7 +64,7 @@ make populate-db
 If you ever want to repopulate the database, you can clear it using
 
 ```bash
-python manage.py clear_wikidata
+python web/manage.py clear_wikidata
 ```
 
 ### To run the categorizer
@@ -100,12 +112,16 @@ black . && isort . && flake8
 
 Each time after you change a model, make sure to create the appropriate migrations:
 ```bash
-python manage.py makemigrations
+python web/manage.py makemigrations
+# OR
+make create-migrations
 ```
 
 To update the database with the new model, run:
 ```bash
-    python manage.py migrate
+python web/manage.py migrate
+# OR
+make migrate
 ```
 
 ## Instructions for Katja to update the live version

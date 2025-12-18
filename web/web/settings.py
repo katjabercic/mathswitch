@@ -31,6 +31,23 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+USE_POSTGRES = config("USE_POSTGRES", default=False, cast=bool)
+
+POSTGRES_DB = config("POSTGRES_DB", default=None)
+POSTGRES_USER = config("POSTGRES_USER", default=None)
+POSTGRES_PASSWORD = config("POSTGRES_PASSWORD", default=None)
+POSTGRES_HOST = config("POSTGRES_HOST", default=None)
+POSTGRES_PORT = config("POSTGRES_PORT", default="5432")
+
+IS_POSTGRES_CONFIGURED = all(
+    [
+        POSTGRES_DB,
+        POSTGRES_USER,
+        POSTGRES_PASSWORD,
+        POSTGRES_HOST,
+    ]
+)
+
 ALLOWED_HOSTS = ["*"]
 
 
@@ -89,6 +106,18 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+if USE_POSTGRES and IS_POSTGRES_CONFIGURED:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": POSTGRES_DB,
+            "USER": POSTGRES_USER,
+            "PASSWORD": POSTGRES_PASSWORD,
+            "HOST": POSTGRES_HOST,
+            "PORT": POSTGRES_PORT,
+        }
+    }
 
 
 # Password validation
