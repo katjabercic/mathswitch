@@ -6,6 +6,12 @@ For a demonstration of a page with at least one link, see for example `{baseurl}
 
 ## Notes on installation and usage
 
+For virtual environment (venv) do the following:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
 To install all the necessary Python packages, run:
 
 ```bash
