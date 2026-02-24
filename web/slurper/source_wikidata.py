@@ -151,11 +151,20 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
         return "\n".join(map(to_triple, WD_OTHER_SOURCES.values()))
 
     def fetch_json(self):
+        headers = self.get_headers()
         response = requests.get(
             self.SPARQL_URL,
             params={"format": "json", "query": self.query},
+            headers=headers,
         )
         return response.json()["results"]["bindings"]
+
+    def get_headers(self):
+        return {
+            "User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
 
     def fetch_article(self, json_item, index=None, total=None):
         global _missing_email_logged
@@ -196,11 +205,7 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
             "explaintext": True,
             "exsectionformat": "plain",
         }
-        headers = {
-            "User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})",
-            "Accept": "application/json",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
+        headers = self.get_headers()
         # Retry logic with exponential backoff
         max_retries = 3
         retry_delay = 1  # Start with 1 second
