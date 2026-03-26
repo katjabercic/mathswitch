@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime
 
 from categorizer.llm_service import LLMService, LLMType
 from concepts.models import CategorizerResult, Item
@@ -34,28 +35,55 @@ class CategorizerService:
         self.logger = logging.getLogger(__name__)
         self.llm_service = LLMService()
 
-    def categorize_items(self, limit=None, judge_pool="low"):
+    def categorize_items(self, limit=None, judge_pool="low", session_name=None):
         """
         Categorize items from the database using all free LLM types.
 
         Args:
             limit: Optional limit on number of items to process
             judge_pool: Which pool of LLMs to use ("low", "local", or "high")
+            session_name: Optional session name to tag results
         """
+        if session_name is None:
+            session_name = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
         pool = JUDGE_POOLS.get(judge_pool, LLM_JUDGE_POOL)
 
-        queryset = Item.objects.all()
-        if limit:
-            queryset = queryset[:limit]
+        self.logger.info(f"Session name: '{session_name}'")
 
-        total = queryset.count()
-        self.logger.info(
-            f"Categorizing {total} items using {len(pool)} LLMs (pool={judge_pool})"
+        already_processed_ids = set(
+            CategorizerResult.objects.filter(session_name=session_name)
+            .values_list("item_id", flat=True)
+            .distinct()
         )
 
-        for i, item in enumerate(queryset):
-            self.logger.info(f"Processing item {i + 1}/{total}: {item.identifier}")
-            self.categorize_item(item, pool=pool)
+        skipped = len(already_processed_ids)
+
+        queryset = Item.objects.all()
+        if already_processed_ids:
+            queryset = queryset.exclude(id__in=already_processed_ids)
+        if limit:
+            remaining = limit - skipped
+            if remaining <= 0:
+                self.logger.info(
+                    f"Limit of {limit} already reached "
+                    f"({skipped} previously processed). Nothing to do."
+                )
+                return
+            queryset = queryset[:remaining]
+
+        items_to_process = list(queryset)
+        to_process = len(items_to_process)
+
+        self.logger.info(
+            f"Items: {skipped} already processed, "
+            f"{to_process} to process (pool={judge_pool}, "
+            f"{len(pool)} LLMs)"
+        )
+
+        for i, item in enumerate(items_to_process):
+            self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
+            self.categorize_item(item, pool=pool, session_name=session_name)
 
         self.logger.info("Categorization complete")
 
@@ -66,6 +94,7 @@ class CategorizerService:
         " given the name, description, "
         "keywords, and article text?",
         pool=None,
+        session_name=None,
     ):
         """
         Categorize a single item using all free LLM types.
@@ -75,6 +104,7 @@ class CategorizerService:
             predicate: The question to evaluate (default: checks if it's
             a mathematical concept)
             pool: List of LLMType to use (defaults to LLM_JUDGE_POOL)
+            session_name: Optional session name to tag results
 
         Returns:
             List of categorization results from all LLMs
@@ -117,6 +147,7 @@ class CategorizerService:
                     raw_result=raw_result,
                     result_answer=parsed_result["answer"],
                     result_confidence=confidence,
+                    session_name=session_name,
                 )
                 categorizer_result.save()
 

@@ -20,10 +20,17 @@ class Command(BaseCommand):
             help="LLM judge pool to use: low/local (HuggingFace),"
             " high (~12GB Ollama models)",
         )
+        parser.add_argument(
+            "--session-name",
+            type=str,
+            default=None,
+            help="Optional session name to tag categorization results",
+        )
 
     def handle(self, *args, **options):
         limit = options.get("limit")
         judge_pool = options.get("judge_pool")
+        session_name = options.get("session_name")
 
         service = CategorizerService()
 
@@ -37,7 +44,9 @@ class Command(BaseCommand):
             self.stdout.write("Categorizing all items...")
 
         try:
-            service.categorize_items(limit=limit, judge_pool=judge_pool)
+            service.categorize_items(
+                limit=limit, judge_pool=judge_pool, session_name=session_name
+            )
             self.stdout.write(self.style.SUCCESS("Categorization complete!"))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Categorization failed: {e}"))
