@@ -86,6 +86,7 @@ class CategorizerService:
             f"{len(pool)} LLMs)"
         )
 
+        total_start = time.perf_counter()
         for i, item in enumerate(items_to_process):
             self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
             self.categorize_item(
@@ -95,7 +96,8 @@ class CategorizerService:
                 judge_pool=judge_pool,
             )
 
-        self.logger.info("Categorization complete")
+        total_elapsed = time.perf_counter() - total_start
+        self.logger.info(f"Categorization complete in {total_elapsed:.2f}s")
 
     def categorize_item(
         self,
