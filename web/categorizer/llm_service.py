@@ -19,6 +19,16 @@ class LLMType(Enum):
     # Ollama (free local models)
     OLLAMA = "ollama"
 
+    # Free local models via Ollama (~12GB VRAM or less at Q4 quantization)
+    OLLAMA_DEEPSEEK_R1_7B = "ollama_deepseek_r1_7b"
+    OLLAMA_DEEPSEEK_R1_14B = "ollama_deepseek_r1_14b"
+    OLLAMA_GEMMA3_12B = "ollama_gemma3_12b"
+    OLLAMA_LLAMA31_8B = "ollama_llama31_8b"
+    OLLAMA_MISTRAL_7B = "ollama_mistral_7b"
+    OLLAMA_QWEN25_7B = "ollama_qwen25_7b"
+    OLLAMA_QWEN25_14B = "ollama_qwen25_14b"
+    OLLAMA_PHI35_MINI = "ollama_phi35_mini"
+
 
 class LLMService:
     """
@@ -47,6 +57,30 @@ class LLMService:
                 "microsoft/DialoGPT-medium", prompt
             ),
             LLMType.OLLAMA: lambda llm_type, prompt: self._call_ollama(prompt),
+            LLMType.OLLAMA_DEEPSEEK_R1_7B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="deepseek-r1:7b"
+            ),
+            LLMType.OLLAMA_DEEPSEEK_R1_14B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="deepseek-r1:14b"
+            ),
+            LLMType.OLLAMA_GEMMA3_12B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="gemma3:12b"
+            ),
+            LLMType.OLLAMA_LLAMA31_8B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="llama3.1:8b"
+            ),
+            LLMType.OLLAMA_MISTRAL_7B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="mistral:7b"
+            ),
+            LLMType.OLLAMA_QWEN25_7B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="qwen2.5:7b"
+            ),
+            LLMType.OLLAMA_QWEN25_14B: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="qwen2.5:14b"
+            ),
+            LLMType.OLLAMA_PHI35_MINI: lambda llm_type, prompt: self._call_ollama(
+                prompt, model="phi3.5:3.8b"
+            ),
         }
 
     def call_llm(self, llm_type: LLMType, prompt: str) -> str:

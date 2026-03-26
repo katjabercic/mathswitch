@@ -1,4 +1,5 @@
 import logging
+import time
 
 from categorizer.llm_service import LLMService, LLMType
 from concepts.models import CategorizerResult, Item
@@ -10,6 +11,19 @@ LLM_JUDGE_POOL = [
     LLMType.HUGGINGFACE_DIALOGPT,
 ]
 
+# High-parameter local models (~12GB VRAM, Q4 quantization)
+LLM_JUDGE_POOL_HIGH = [
+    LLMType.OLLAMA_DEEPSEEK_R1_14B,
+    LLMType.OLLAMA_QWEN25_14B,
+    LLMType.OLLAMA_GEMMA3_12B,
+]
+
+JUDGE_POOLS = {
+    "low": LLM_JUDGE_POOL,
+    "local": LLM_JUDGE_POOL,
+    "high": LLM_JUDGE_POOL_HIGH,
+}
+
 
 class CategorizerService:
     """
@@ -20,25 +34,28 @@ class CategorizerService:
         self.logger = logging.getLogger(__name__)
         self.llm_service = LLMService()
 
-    def categorize_items(self, limit=None):
+    def categorize_items(self, limit=None, judge_pool="low"):
         """
         Categorize items from the database using all free LLM types.
 
         Args:
             limit: Optional limit on number of items to process
+            judge_pool: Which pool of LLMs to use ("low", "local", or "high")
         """
+        pool = JUDGE_POOLS.get(judge_pool, LLM_JUDGE_POOL)
+
         queryset = Item.objects.all()
         if limit:
             queryset = queryset[:limit]
 
         total = queryset.count()
         self.logger.info(
-            f"Categorizing {total} items using {len(LLM_JUDGE_POOL)} free LLMs"
+            f"Categorizing {total} items using {len(pool)} LLMs (pool={judge_pool})"
         )
 
         for i, item in enumerate(queryset):
             self.logger.info(f"Processing item {i + 1}/{total}: {item.identifier}")
-            self.categorize_item(item)
+            self.categorize_item(item, pool=pool)
 
         self.logger.info("Categorization complete")
 
@@ -48,6 +65,7 @@ class CategorizerService:
         predicate: str = "Is the given concept a mathematical concept,"
         " given the name, description, "
         "keywords, and article text?",
+        pool=None,
     ):
         """
         Categorize a single item using all free LLM types.
@@ -56,20 +74,31 @@ class CategorizerService:
             item: Item instance to categorize
             predicate: The question to evaluate (default: checks if it's
             a mathematical concept)
+            pool: List of LLMType to use (defaults to LLM_JUDGE_POOL)
 
         Returns:
             List of categorization results from all LLMs
         """
+        if pool is None:
+            pool = LLM_JUDGE_POOL
+
         self.logger.debug(f"Categorizing: {item.name}")
 
         prompt = self._build_categorization_prompt(item, predicate)
 
         results = []
 
-        for llm_type in LLM_JUDGE_POOL:
+        pool_start = time.perf_counter()
+        for llm_type in pool:
             try:
                 self.logger.info(f"Calling {llm_type.value} for {item.name}")
+                llm_start = time.perf_counter()
                 raw_result = self.llm_service.call_llm(llm_type, prompt)
+                llm_elapsed = time.perf_counter() - llm_start
+                self.logger.info(
+                    f"LLM call '{llm_type.value}' for '{item.name}' "
+                    f"took {llm_elapsed:.2f}s"
+                )
                 self.logger.info(
                     f"Categorized {item.name} with {llm_type.value}: "
                     f"{raw_result[:100]}..."
@@ -100,10 +129,16 @@ class CategorizerService:
                 results.append(parsed_result)
             except Exception as e:
                 self.logger.error(
-                    f"Failed to categorize {item.name} with {llm_type.value}: {e}"
+                    f"Failed to categorize '{item.name}' with '{llm_type.value}': '{e}'"
                 )
                 # Continue with other LLMs even if one fails?
                 continue
+
+        pool_elapsed = time.perf_counter() - pool_start
+        self.logger.info(
+            f"Pool execution for '{item.name}' took {pool_elapsed:.2f}s "
+            f"({len(pool)} LLMs)"
+        )
 
         return results
 
@@ -204,13 +239,13 @@ Please provide your evaluation in the comma-separated format specified above."""
                         confidence = int(confidence_str)
                         if not 0 <= confidence <= 100:
                             self.logger.warning(
-                                f"Confidence {confidence} out of range [0-100], "
+                                f"Confidence {confidence!r} out of range [0-100], "
                                 f"setting to None"
                             )
                             confidence = None
                     except ValueError:
                         self.logger.warning(
-                            f"Invalid confidence value '{confidence_str}', "
+                            f"Invalid confidence value {confidence_str!r}, "
                             f"setting to None"
                         )
                         confidence = None
@@ -218,7 +253,7 @@ Please provide your evaluation in the comma-separated format specified above."""
                     confidence = None
             else:
                 raise ValueError(
-                    f"Expected format 'answer' or 'answer,confidence', got: {result}"
+                    f"Expected format 'answer' or 'answer,confidence', got: {result!r}"
                 )
 
             # Parse answer - accept yes/true/1 as True, no/false/0 as False
@@ -228,12 +263,14 @@ Please provide your evaluation in the comma-separated format specified above."""
                 answer = False
             else:
                 raise ValueError(
-                    f"Invalid answer value: {answer_str}. "
+                    f"Invalid answer value: {answer_str!r}. "
                     f"Expected yes/no, true/false, or 1/0"
                 )
 
             return {"answer": answer, "confidence": confidence}
 
         except (ValueError, IndexError) as e:
-            self.logger.error(f"Failed to parse response: {result}")
+            self.logger.error(
+                f"Failed to parse response: result={result!r}, " f"error={e!r}"
+            )
             raise ValueError(f"Invalid response format: {e}")
