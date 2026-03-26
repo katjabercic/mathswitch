@@ -1,7 +1,13 @@
 import logging
 import time
+from datetime import datetime
 
 from categorizer.llm_service import LLMService, LLMType
+from categorizer.prompts import build_categorization_prompt
+from categorizer.result_parsers import (
+    parse_categorization_result,
+    parse_categorization_result_with_reasoning,
+)
 from concepts.models import CategorizerResult, Item
 
 # Free LLM types to use for categorization
@@ -34,28 +40,60 @@ class CategorizerService:
         self.logger = logging.getLogger(__name__)
         self.llm_service = LLMService()
 
-    def categorize_items(self, limit=None, judge_pool="low"):
+    def categorize_items(self, limit=None, judge_pool="low", session_name=None):
         """
         Categorize items from the database using all free LLM types.
 
         Args:
             limit: Optional limit on number of items to process
             judge_pool: Which pool of LLMs to use ("low", "local", or "high")
+            session_name: Optional session name to tag results
         """
+        if session_name is None:
+            session_name = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
         pool = JUDGE_POOLS.get(judge_pool, LLM_JUDGE_POOL)
 
-        queryset = Item.objects.all()
-        if limit:
-            queryset = queryset[:limit]
+        self.logger.info(f"Session name: '{session_name}'")
 
-        total = queryset.count()
-        self.logger.info(
-            f"Categorizing {total} items using {len(pool)} LLMs (pool={judge_pool})"
+        already_processed_ids = set(
+            CategorizerResult.objects.filter(session_name=session_name)
+            .values_list("item_id", flat=True)
+            .distinct()
         )
 
-        for i, item in enumerate(queryset):
-            self.logger.info(f"Processing item {i + 1}/{total}: {item.identifier}")
-            self.categorize_item(item, pool=pool)
+        skipped = len(already_processed_ids)
+
+        queryset = Item.objects.all()
+        if already_processed_ids:
+            queryset = queryset.exclude(id__in=already_processed_ids)
+        if limit:
+            remaining = limit - skipped
+            if remaining <= 0:
+                self.logger.info(
+                    f"Limit of {limit} already reached "
+                    f"({skipped} previously processed). Nothing to do."
+                )
+                return
+            queryset = queryset[:remaining]
+
+        items_to_process = list(queryset)
+        to_process = len(items_to_process)
+
+        self.logger.info(
+            f"Items: {skipped} already processed, "
+            f"{to_process} to process (pool={judge_pool}, "
+            f"{len(pool)} LLMs)"
+        )
+
+        for i, item in enumerate(items_to_process):
+            self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
+            self.categorize_item(
+                item,
+                pool=pool,
+                session_name=session_name,
+                judge_pool=judge_pool,
+            )
 
         self.logger.info("Categorization complete")
 
@@ -66,6 +104,8 @@ class CategorizerService:
         " given the name, description, "
         "keywords, and article text?",
         pool=None,
+        session_name=None,
+        judge_pool="low",
     ):
         """
         Categorize a single item using all free LLM types.
@@ -75,6 +115,8 @@ class CategorizerService:
             predicate: The question to evaluate (default: checks if it's
             a mathematical concept)
             pool: List of LLMType to use (defaults to LLM_JUDGE_POOL)
+            session_name: Optional session name to tag results
+            judge_pool: Which pool tier ("low", "local", or "high")
 
         Returns:
             List of categorization results from all LLMs
@@ -82,9 +124,13 @@ class CategorizerService:
         if pool is None:
             pool = LLM_JUDGE_POOL
 
+        use_reasoning = judge_pool not in ("low", "local")
+
         self.logger.debug(f"Categorizing: {item.name}")
 
-        prompt = self._build_categorization_prompt(item, predicate)
+        prompt = build_categorization_prompt(
+            item, predicate, with_reasoning=use_reasoning
+        )
 
         results = []
 
@@ -105,7 +151,13 @@ class CategorizerService:
                 )
 
                 print(f"{raw_result}")
-                parsed_result = self._parse_categorization_result(raw_result)
+
+                if use_reasoning:
+                    parsed_result = parse_categorization_result_with_reasoning(
+                        raw_result
+                    )
+                else:
+                    parsed_result = parse_categorization_result(raw_result)
 
                 confidence = parsed_result["confidence"]
                 if confidence is None:
@@ -117,6 +169,8 @@ class CategorizerService:
                     raw_result=raw_result,
                     result_answer=parsed_result["answer"],
                     result_confidence=confidence,
+                    session_name=session_name,
+                    reasoning=parsed_result.get("reasoning"),
                 )
                 categorizer_result.save()
 
@@ -141,136 +195,3 @@ class CategorizerService:
         )
 
         return results
-
-    def _build_categorization_prompt(self, item, predicate: str):
-        """
-        Build a prompt for evaluating a concept against a predicate.
-
-        Args:
-            item: Item instance to categorize
-            predicate: The question/predicate to evaluate
-
-        Returns:
-            Formatted prompt string
-        """
-        system_prompt = """You are a categorization judge. Your task is to
-         evaluate whether a given concept satisfies a specific predicate.
-
-You must respond with a structured answer containing:
-1. answer: true or false (boolean)
-2. confidence: a number from 0 to 100 (representing your confidence percentage)
-
-IMPORTANT: Format your response as comma-separated string:
-yes,85
-"""
-
-        item_info_parts = [f"Name: {item.name}"]
-
-        if item.description:
-            item_info_parts.append(f"Description: {item.description[:100]}")
-
-        if item.keywords:
-            item_info_parts.append(f"Keywords: {item.keywords[:200]}")
-
-        if item.article_text:
-            # Truncate article text to 1000 characters
-            article_text = item.article_text[:1000]
-            item_info_parts.append(f"Article text: {article_text}")
-
-        item_info = "\n".join(item_info_parts)
-
-        prompt = f"""{system_prompt}
-
----
-
-CONCEPT INFORMATION:
-{item_info}
-
----
-
-PREDICATE TO EVALUATE:
-{predicate}
-
----
-
-Please provide your evaluation in the comma-separated format specified above."""
-
-        return prompt
-
-    def _parse_categorization_result(self, result: str) -> dict:
-        """
-        Parse the LLM's comma-separated response.
-
-        Args:
-            result: The raw response from the LLM (expected format: "yes,85"
-            or "no,75", "yes ---")
-
-        Returns:
-            Dictionary with 'answer' (bool) and 'confidence' (int) keys
-
-        Raises:
-            ValueError: If the response cannot be parsed
-        """
-        try:
-            # Clean the result string
-            result = result.strip()
-
-            # Split by comma (with or without space) or just space
-            # Try separators in order of specificity: ", ", ",", " "
-            if ", " in result:
-                parts = result.split(", ", 1)
-            elif "," in result:
-                parts = result.split(",", 1)
-            else:
-                parts = result.split(" ", 1)
-
-            if len(parts) == 1:
-                # Only answer provided, no confidence
-                answer_str = parts[0].strip().lower()
-                confidence = None
-            elif len(parts) == 2:
-                # Both answer and confidence provided
-                answer_str = parts[0].strip().lower()
-                confidence_str = parts[1].strip()
-
-                # Parse confidence if provided
-                if confidence_str:
-                    try:
-                        confidence = int(confidence_str)
-                        if not 0 <= confidence <= 100:
-                            self.logger.warning(
-                                f"Confidence {confidence!r} out of range [0-100], "
-                                f"setting to None"
-                            )
-                            confidence = None
-                    except ValueError:
-                        self.logger.warning(
-                            f"Invalid confidence value {confidence_str!r}, "
-                            f"setting to None"
-                        )
-                        confidence = None
-                else:
-                    confidence = None
-            else:
-                raise ValueError(
-                    f"Expected format 'answer' or 'answer,confidence', got: {result!r}"
-                )
-
-            # Parse answer - accept yes/true/1 as True, no/false/0 as False
-            if answer_str in ("yes", "true", "1"):
-                answer = True
-            elif answer_str in ("no", "false", "0"):
-                answer = False
-            else:
-                raise ValueError(
-                    f"Invalid answer value: {answer_str!r}. "
-                    f"Expected yes/no, true/false, or 1/0"
-                )
-
-            return {"answer": answer, "confidence": confidence}
-
-        except (ValueError, IndexError) as e:
-            self.logger.error(
-                f"Failed to parse response: result={result!r}, " f"error={e!r}"
-            )
-            raise ValueError(f"Invalid response format: {e}")
