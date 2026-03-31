@@ -1,9 +1,9 @@
-from categorizer.categorizer_service import CategorizerService
+from categorizer.categorizer_service import JUDGE_POOLS, CategorizerService
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Categorize mathematical concepts using all free LLMs (HuggingFace models)"
+    help = "Categorize mathematical concepts using LLM judge pools"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -12,23 +12,41 @@ class Command(BaseCommand):
             default=None,
             help="Limit the number of items to categorize",
         )
+        parser.add_argument(
+            "--judge-pool",
+            type=str,
+            default="low",
+            choices=JUDGE_POOLS.keys(),
+            help="LLM judge pool to use: low/local (HuggingFace),"
+            " high (~12GB Ollama models)",
+        )
+        parser.add_argument(
+            "--session-name",
+            type=str,
+            default=None,
+            help="Optional session name to tag categorization results",
+        )
 
     def handle(self, *args, **options):
         limit = options.get("limit")
+        judge_pool = options.get("judge_pool")
+        session_name = options.get("session_name")
 
         service = CategorizerService()
 
-        self.stdout.write(
-            "Using all free LLMs: huggingface_flan_t5, "
-            "huggingface_gpt2, huggingface_dialogpt"
-        )
+        pool = JUDGE_POOLS[judge_pool]
+        model_names = ", ".join(m.value for m in pool)
+        self.stdout.write(f"Using judge pool '{judge_pool}': {model_names}")
+
         if limit:
             self.stdout.write(f"Categorizing up to {limit} items...")
         else:
             self.stdout.write("Categorizing all items...")
 
         try:
-            service.categorize_items(limit=limit)
+            service.categorize_items(
+                limit=limit, judge_pool=judge_pool, session_name=session_name
+            )
             self.stdout.write(self.style.SUCCESS("Categorization complete!"))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Categorization failed: {e}"))

@@ -176,6 +176,8 @@ class CategorizerResult(models.Model):
     raw_result = models.TextField()
     result_answer = models.BooleanField()
     result_confidence = models.IntegerField()
+    session_name = models.TextField(null=True, blank=True, default=None)
+    reasoning = models.TextField(null=True, blank=True, default=None)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
