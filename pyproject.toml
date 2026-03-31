@@ -1,7 +1,8 @@
 [tool.black]
 extend-exclude = 'migrations'
-target-version = ['py310']
+target-version = ['py312']
+
 [tool.isort]
 extend_skip_glob = ["*/migrations/*"]
 profile = "black"
-py_version = 310
+py_version = 312

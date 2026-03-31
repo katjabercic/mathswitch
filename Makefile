@@ -1,3 +1,13 @@
+VENV_DIR := venv
+
+prepare-venv:
+	@command -v pyenv >/dev/null 2>&1 || { echo "pyenv not installed"; exit 1; }
+	pyenv install -s
+	python -m venv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install --upgrade pip
+	@echo "In order to use venv python, please run 'source venv/bin/activate', then install dependencies by running \
+	'make install-dev'."
+
 prepare-web:
 	pip install -r web/requirements.txt
 	cp web/.env.example web/.env
@@ -30,3 +40,9 @@ fix-files:
 	python3 -m black .
 	python3 -m isort .
 	python3 -m flake8 .
+
+create-migrations:
+	python ./web/manage.py makemigrations
+
+migrate:
+	python ./web/manage.py migrate
