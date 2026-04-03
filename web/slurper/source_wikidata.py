@@ -7,7 +7,12 @@ from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 
-from web.settings import WIKIDATA_PAGE_SIZE, WIKIPEDIA_CONTACT_EMAIL
+from web.settings import (
+    IMPORT_MATH_ENTITIES,
+    IMPORT_PHYSICS_ENTITIES,
+    WIKIDATA_PAGE_SIZE,
+    WIKIPEDIA_CONTACT_EMAIL,
+)
 
 # Wikipedia API contact email (required by Wikipedia API guidelines)
 # Set to None to disable Wikipedia article fetching
@@ -110,8 +115,9 @@ class WikidataSlurper:
 """
     )
 
-    def __init__(self, source, query):
+    def __init__(self, source, query, domain=Item.Domain.MATHEMATICS):
         self.source = source
+        self.domain = domain
         self.page_size = WIKIDATA_PAGE_SIZE
         self.base_query = (
             """
@@ -352,7 +358,7 @@ ORDER BY ?item
 
     def _get_items_from_page(self, page_data):
         for json_item in page_data:
-            raw_item = BaseWdRawItem.raw_item(self.source, json_item)
+            raw_item = BaseWdRawItem.raw_item(self.source, json_item, domain=self.domain)
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
                 raw_item_wd = raw_item.switch_source_to(Item.Source.WIKIDATA)
@@ -395,34 +401,60 @@ ORDER BY ?item
     def save_links(self):
         raw_data = self.fetch_all()
         for json_item in raw_data:
-            BaseWdRawItem.raw_item(self.source, json_item).save_links()
+            BaseWdRawItem.raw_item(self.source, json_item, domain=self.domain).save_links()
         logging.info(
             f"[{self.source.label}] save_links finished: "
             f"processed {len(raw_data)} items."
         )
 
 
-SLURPERS = [
-    WikidataSlurper(Item.Source.WIKIDATA, query)
-    for query in [
-        """
-  # anything part of a topic that is studied by mathmatics
+SLURPERS = []
+
+if IMPORT_MATH_ENTITIES:
+    SLURPERS += [
+        WikidataSlurper(Item.Source.WIKIDATA, query)
+        for query in [
+            """
+  # anything part of a topic that is studied by mathematics
   ?item wdt:P31 ?topic .
   ?topic wdt:P2579 wd:Q395 .
 """,
-        """
+            """
   # concepts studied by an area of mathematics
   ?item wdt:P2579 ?area .
   ?area wdt:P31 wd:Q1936384 .
 """,
-        """
+            """
   # concepts of areas of mathematics
   ?item p:P31 ?of .
   ?of ps:P31 wd:Q151885 .
   ?of pq:P642/p:P31/ps:P31 wd:Q1936384 .
 """,
+        ]
     ]
-]
+
+if IMPORT_PHYSICS_ENTITIES:
+    SLURPERS += [
+        WikidataSlurper(Item.Source.WIKIDATA, query, domain=Item.Domain.PHYSICS)
+        for query in [
+            """
+  # anything part of a topic that is studied by physics
+  ?item wdt:P31 ?topic .
+  ?topic wdt:P2579 wd:Q413 .
+""",
+            """
+  # concepts studied by a branch of physics
+  ?item wdt:P2579 ?area .
+  ?area wdt:P31 wd:Q4162444 .
+""",
+            """
+  # concepts of branches of physics
+  ?item p:P31 ?of .
+  ?of ps:P31 wd:Q151885 .
+  ?of pq:P642/p:P31/ps:P31 wd:Q4162444 .
+""",
+        ]
+    ]
 
 SLURPERS += [
     WikidataSlurper(

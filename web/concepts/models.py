@@ -61,6 +61,10 @@ class ItemQuerySet(models.QuerySet):
 
 
 class Item(models.Model):
+    class Domain(models.TextChoices):
+        MATHEMATICS = "math", "Mathematics"
+        PHYSICS = "phys", "Physics"
+
     class Source(models.TextChoices):
         WIKIDATA = "Wd", "Wikidata"
         NLAB = "nL", "nLab"
@@ -83,6 +87,9 @@ class Item(models.Model):
             ]
             return lambda item: SOURCES.index(item.source)
 
+    domain = models.CharField(
+        max_length=4, choices=Domain.choices, default=Domain.MATHEMATICS
+    )
     source = models.CharField(max_length=4, choices=Source.choices)
     identifier = models.CharField(max_length=200)
     url = models.URLField(max_length=200)

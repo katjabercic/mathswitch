@@ -25,9 +25,10 @@ WD_OTHER_SOURCES = {
 
 
 class BaseWdRawItem:
-    def __init__(self, source, json_item):
+    def __init__(self, source, json_item, domain=Item.Domain.MATHEMATICS):
         self.source = source
         self.raw = json_item
+        self.domain = domain
         self.wd_id = self.raw["item"]["value"]
         self.item = self.get_item()
 
@@ -62,7 +63,7 @@ class BaseWdRawItem:
             return WD_OTHER_SOURCES[source]["json_key"] in self.raw
 
     def switch_source_to(self, source):
-        return BaseWdRawItem.raw_item(source, self.raw)
+        return BaseWdRawItem.raw_item(source, self.raw, domain=self.domain)
 
     def to_item(self) -> Optional[Item]:
         # Extract keywords from article text if available
@@ -77,6 +78,7 @@ class BaseWdRawItem:
             keywords = ", ".join(keyword_list) if keyword_list else None
 
         return Item(
+            domain=self.domain,
             source=self.source,
             identifier=self.identifier(),
             url=self.url(),
@@ -109,25 +111,25 @@ class BaseWdRawItem:
             self.save_link_to(Item.Source.WIKIPEDIA_EN)
 
     @staticmethod
-    def raw_item(source, json_item):
+    def raw_item(source, json_item, domain=Item.Domain.MATHEMATICS):
         match source:
             case Item.Source.WIKIDATA:
-                return WdRawItem(json_item)
+                return WdRawItem(json_item, domain=domain)
             case Item.Source.NLAB:
-                return nLabRawItem(json_item)
+                return nLabRawItem(json_item, domain=domain)
             case Item.Source.MATHWORLD:
-                return MWRawItem(json_item)
+                return MWRawItem(json_item, domain=domain)
             case Item.Source.PROOF_WIKI:
-                return PWRawItem(json_item)
+                return PWRawItem(json_item, domain=domain)
             case Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS:
-                return EoMRawItem(json_item)
+                return EoMRawItem(json_item, domain=domain)
             case Item.Source.WIKIPEDIA_EN:
-                return WpENRawItem(json_item)
+                return WpENRawItem(json_item, domain=domain)
 
 
 class WdRawItem(BaseWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.WIKIDATA, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.WIKIDATA, json_item, domain=domain)
 
     def identifier(self):
         return self.wd_id.split("/")[-1]
@@ -155,8 +157,8 @@ class WdRawItem(BaseWdRawItem):
 
 
 class WpENRawItem(BaseWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.WIKIPEDIA_EN, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.WIKIPEDIA_EN, json_item, domain=domain)
 
     def identifier(self):
         return self.url().split("/")[-1]
@@ -169,8 +171,8 @@ class WpENRawItem(BaseWdRawItem):
 
 
 class OtherWdRawItem(BaseWdRawItem):
-    def __init__(self, source, json_item):
-        super().__init__(source, json_item)
+    def __init__(self, source, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(source, json_item, domain=domain)
 
     def identifier(self):
         json_key = WD_OTHER_SOURCES[self.source]["json_key"]
@@ -186,32 +188,32 @@ class OtherWdRawItem(BaseWdRawItem):
 
 
 class nLabRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.NLAB, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.NLAB, json_item, domain=domain)
 
     def url(self):
         return "https://ncatlab.org/nlab/show/" + self.identifier()
 
 
 class MWRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.MATHWORLD, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.MATHWORLD, json_item, domain=domain)
 
     def url(self):
         return "https://mathworld.wolfram.com/" + self.identifier() + ".html"
 
 
 class PWRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.PROOF_WIKI, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.PROOF_WIKI, json_item, domain=domain)
 
     def url(self):
         return "https://proofwiki.org/wiki/" + self.identifier()
 
 
 class EoMRawItem(OtherWdRawItem):
-    def __init__(self, json_item):
-        super().__init__(Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS, json_item)
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS, json_item, domain=domain)
 
     def url(self):
         return "https://encyclopediaofmath.org/wiki/" + self.identifier()

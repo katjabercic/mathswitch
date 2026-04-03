@@ -183,3 +183,7 @@ LOGGING = {
 
 # Pageable config
 WIKIDATA_PAGE_SIZE = config("WIKIDATA_PAGE_SIZE", default=1000, cast=int)
+
+# Feature flags
+IMPORT_MATH_ENTITIES = config("IMPORT_MATH_ENTITIES", default=True, cast=bool)
+IMPORT_PHYSICS_ENTITIES = config("IMPORT_PHYSICS_ENTITIES", default=False, cast=bool)
