@@ -180,3 +180,6 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+# Pageable config
+WIKIDATA_PAGE_SIZE = config("WIKIDATA_PAGE_SIZE", default=1000, cast=int)

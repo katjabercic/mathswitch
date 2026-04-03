@@ -1,15 +1,16 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from slurper import source_wikidata
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        print("\r  waiting for Wikidata", end="")
         n = len(source_wikidata.SLURPERS)
         for i, slurper in enumerate(source_wikidata.SLURPERS):
-            print(f"\r  items {i}/{n}: {slurper.source.label}".ljust(50), end="")
+            logging.info(f"=== items {i+1}/{n}: {slurper.source.label} ===")
             slurper.save_items()
         for i, slurper in enumerate(source_wikidata.SLURPERS):
-            print(f"\r  links {i}/{n}: {slurper.source.label}".ljust(50), end="")
+            logging.info(f"=== links {i+1}/{n}: {slurper.source.label} ===")
             slurper.save_links()
-        print("\r  done.".ljust(60))
+        logging.info("=== import_wikidata done. ===")

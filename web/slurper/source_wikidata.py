@@ -7,7 +7,7 @@ from concepts.models import Item
 from django.db.utils import IntegrityError
 from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 
-from web.settings import WIKIPEDIA_CONTACT_EMAIL
+from web.settings import WIKIDATA_PAGE_SIZE, WIKIPEDIA_CONTACT_EMAIL
 
 # Wikipedia API contact email (required by Wikipedia API guidelines)
 # Set to None to disable Wikipedia article fetching
@@ -110,9 +110,10 @@ class WikidataSlurper:
 """
     )
 
-    def __init__(self, source, query, limit=None):
+    def __init__(self, source, query):
         self.source = source
-        self.query = (
+        self.page_size = WIKIDATA_PAGE_SIZE
+        self.base_query = (
             """
 SELECT
   DISTINCT ?item ?itemLabel ?itemDescription ?image ?wp_en
@@ -129,10 +130,9 @@ WHERE {
 GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
             + " ".join([f"?{src['json_key']}" for src in WD_OTHER_SOURCES.values()])
             + """
+ORDER BY ?item
 """
-            + (f"LIMIT {limit}" if limit is not None else "")
         )
-        self.raw_data = self.fetch_json()
 
     def _sparql_source_vars_select(self):
         def to_var(source_dict):
@@ -150,14 +150,80 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
 
         return "\n".join(map(to_triple, WD_OTHER_SOURCES.values()))
 
-    def fetch_json(self):
+    def fetch_page(self, offset):
+        query = self.base_query + f"LIMIT {self.page_size} OFFSET {offset}\n"
         headers = self.get_headers()
-        response = requests.get(
-            self.SPARQL_URL,
-            params={"format": "json", "query": self.query},
-            headers=headers,
-        )
-        return response.json()["results"]["bindings"]
+        retry_delays = [5, 10, 30, 60]
+        max_retries = len(retry_delays) + 1
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(
+                    self.SPARQL_URL,
+                    params={"format": "json", "query": query},
+                    headers=headers,
+                    timeout=(10, 120),
+                )
+                if response.status_code in (429, 500, 502, 503, 504):
+                    if attempt < max_retries - 1:
+                        delay = retry_delays[attempt]
+                        logging.info(
+                            f"[{self.source.label}] retryable status "
+                            f"{response.status_code}, "
+                            f"waiting {delay}s..."
+                        )
+                        time.sleep(delay)
+                        continue
+                    else:
+                        logging.error(
+                            f"[{self.source.label}] giving up after "
+                            f"{max_retries} attempts "
+                            f"(status {response.status_code})"
+                        )
+                        return []
+
+                response.raise_for_status()
+                return response.json()["results"]["bindings"]
+
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    logging.info(
+                        f"[{self.source.label}] request failed ({e}), "
+                        f"retrying in {delay}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    logging.error(
+                        f"[{self.source.label}] giving up after "
+                        f"{max_retries} attempts: {e}"
+                    )
+                    return []
+        return []
+
+    def fetch_pages(self):
+        """Yield one page of raw JSON results at a time."""
+        offset = 0
+        page = 1
+        while True:
+            logging.info(
+                f"[{self.source.label}] fetching page {page} "
+                f"(offset={offset}, limit={self.page_size})..."
+            )
+            data = self.fetch_page(offset)
+            if not data:
+                logging.info(
+                    f"[{self.source.label}] page {page} returned 0 items, done."
+                )
+                break
+            logging.info(
+                f"[{self.source.label}] page {page} returned {len(data)} items."
+            )
+            yield data
+            if len(data) < self.page_size:
+                break
+            offset += self.page_size
+            page += 1
+            time.sleep(1)
 
     def get_headers(self):
         return {
@@ -284,8 +350,8 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
 
         return None
 
-    def get_items(self):
-        for json_item in self.raw_data:
+    def _get_items_from_page(self, page_data):
+        for json_item in page_data:
             raw_item = BaseWdRawItem.raw_item(self.source, json_item)
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
@@ -303,19 +369,37 @@ GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en """
                 if not raw_item_wp_en.item_exists():
                     yield raw_item_wp_en.to_item()
 
+    def fetch_all(self):
+        """Fetch all pages and return combined raw data."""
+        all_data = []
+        for page_num, page_data in enumerate(self.fetch_pages(), start=1):
+            all_data.extend(page_data)
+        logging.info(f"[{self.source.label}] fetched {len(all_data)} items total.")
+        return all_data
+
     def save_items(self):
-        for item in self.get_items():
+        raw_data = self.fetch_all()
+        total_saved = 0
+        for item in self._get_items_from_page(raw_data):
             try:
                 item.save()
+                total_saved += 1
             except IntegrityError:
-                logging.log(
-                    logging.INFO,
-                    f"Item {item.source} {item.identifier} is already in the database.",
+                logging.info(
+                    f"Item {item.source} {item.identifier} is already in the database."
                 )
+        logging.info(
+            f"[{self.source.label}] save_items finished: {total_saved} items total."
+        )
 
     def save_links(self):
-        for json_item in self.raw_data:
+        raw_data = self.fetch_all()
+        for json_item in raw_data:
             BaseWdRawItem.raw_item(self.source, json_item).save_links()
+        logging.info(
+            f"[{self.source.label}] save_links finished: "
+            f"processed {len(raw_data)} items."
+        )
 
 
 SLURPERS = [
