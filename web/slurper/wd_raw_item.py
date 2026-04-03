@@ -213,7 +213,9 @@ class PWRawItem(OtherWdRawItem):
 
 class EoMRawItem(OtherWdRawItem):
     def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
-        super().__init__(Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS, json_item, domain=domain)
+        super().__init__(
+            Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS, json_item, domain=domain
+        )
 
     def url(self):
         return "https://encyclopediaofmath.org/wiki/" + self.identifier()

@@ -358,7 +358,9 @@ ORDER BY ?item
 
     def _get_items_from_page(self, page_data):
         for json_item in page_data:
-            raw_item = BaseWdRawItem.raw_item(self.source, json_item, domain=self.domain)
+            raw_item = BaseWdRawItem.raw_item(
+                self.source, json_item, domain=self.domain
+            )
             yield raw_item.to_item()
             if self.source != Item.Source.WIKIDATA:
                 raw_item_wd = raw_item.switch_source_to(Item.Source.WIKIDATA)
@@ -401,7 +403,9 @@ ORDER BY ?item
     def save_links(self):
         raw_data = self.fetch_all()
         for json_item in raw_data:
-            BaseWdRawItem.raw_item(self.source, json_item, domain=self.domain).save_links()
+            BaseWdRawItem.raw_item(
+                self.source, json_item, domain=self.domain
+            ).save_links()
         logging.info(
             f"[{self.source.label}] save_links finished: "
             f"processed {len(raw_data)} items."
