@@ -40,7 +40,9 @@ class CategorizerService:
         self.logger = logging.getLogger(__name__)
         self.llm_service = LLMService()
 
-    def categorize_items(self, limit=None, judge_pool="low", session_name=None):
+    def categorize_items(
+        self, limit=None, judge_pool="low", domain=None, session_name=None
+    ):
         """
         Categorize items from the database using all free LLM types.
 
@@ -64,7 +66,7 @@ class CategorizerService:
 
         skipped = len(already_processed_ids)
 
-        queryset = Item.objects.all()
+        queryset = Item.objects.filter(domain=domain) if domain else Item.objects.all()
         if already_processed_ids:
             queryset = queryset.exclude(id__in=already_processed_ids)
         if limit:
