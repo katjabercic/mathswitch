@@ -98,6 +98,7 @@ class Item(models.Model):
     keywords = models.TextField(null=True, blank=True)
     article_text = models.TextField(null=True, blank=True)
     aliases = models.TextField(null=True, blank=True)
+    meta = models.TextField(null=True, blank=True)
     concept = models.ForeignKey(
         Concept,
         models.SET_NULL,

@@ -29,6 +29,13 @@ class Command(BaseCommand):
             help="Domain to categorize: math (default) or phys",
         )
         parser.add_argument(
+            "--source",
+            type=str,
+            default=None,
+            choices=Item.Source.values,
+            help="Filter by source (e.g. Wd, nL, MW, PW, EoM, WpEN, AUm)",
+        )
+        parser.add_argument(
             "--session-name",
             type=str,
             default=None,
@@ -39,6 +46,7 @@ class Command(BaseCommand):
         limit = options.get("limit")
         judge_pool = options.get("judge_pool")
         domain = options.get("domain")
+        source = options.get("source")
         session_name = options.get("session_name")
 
         service = CategorizerService()
@@ -47,6 +55,8 @@ class Command(BaseCommand):
         model_names = ", ".join(m.value for m in pool)
         self.stdout.write(f"Using judge pool '{judge_pool}': {model_names}")
         self.stdout.write(f"Domain: {domain}")
+        if source:
+            self.stdout.write(f"Source: {source}")
 
         if limit:
             self.stdout.write(f"Categorizing up to {limit} items...")
@@ -58,6 +68,7 @@ class Command(BaseCommand):
                 limit=limit,
                 judge_pool=judge_pool,
                 domain=domain,
+                source=source,
                 session_name=session_name,
             )
             self.stdout.write(self.style.SUCCESS("Categorization complete!"))
