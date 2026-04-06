@@ -12,6 +12,13 @@ yes,85
 SYSTEM_PROMPT_WITH_REASONING = """You are a categorization judge. Your task is to
          evaluate whether a given concept satisfies a specific predicate.
 
+Be careful with concepts from adjacent domains such as physics, computer science,
+or engineering. A concept should only be classified as mathematical if it is
+primarily mathematical in nature. Concepts that merely use mathematics as a tool
+(e.g. quantum mechanics, signal processing) should not be considered mathematical
+concepts. When in doubt, consider whether the concept originates from or is
+primarily studied within mathematics.
+
 You must respond with a structured answer containing:
 1. answer: yes or no
 2. confidence: a number from 0 to 100 (representing your confidence percentage)
@@ -24,7 +31,9 @@ reasoning: The concept is clearly mathematical because...
 """
 
 
-def build_categorization_prompt(item, predicate, with_reasoning=False):
+def build_categorization_prompt(
+    item, predicate, with_reasoning=False, use_other_ids=True
+):
     """
     Build a prompt for evaluating a concept against a predicate.
 
@@ -32,6 +41,8 @@ def build_categorization_prompt(item, predicate, with_reasoning=False):
         item: Item instance to categorize
         predicate: The question/predicate to evaluate
         with_reasoning: If True, ask for reasoning in the response
+        use_other_ids: If True, include external IDs from item.meta
+            (only applies to Wikidata items)
 
     Returns:
         Formatted prompt string
@@ -54,6 +65,11 @@ def build_categorization_prompt(item, predicate, with_reasoning=False):
         article_text = item.article_text[:1000]
         item_info_parts.append(f"Article text: {article_text}")
 
+    if use_other_ids:
+        other_ids = _get_other_ids(item)
+        if other_ids:
+            item_info_parts.append(f"External IDs: {other_ids}")
+
     item_info = "\n".join(item_info_parts)
 
     prompt = f"""{system_prompt}
@@ -73,3 +89,33 @@ PREDICATE TO EVALUATE:
 Please provide your evaluation in the format specified above."""
 
     return prompt
+
+
+_OTHER_ID_KEYS = {
+    "mathworld_id": "MathWorld ID",
+    "nlab_id": "nLab ID",
+    "proofwiki_id": "ProofWiki ID",
+    "eom_id": "Encyclopedia of Mathematics ID",
+}
+
+
+def _get_other_ids(item):
+    from concepts.models import Item
+
+    if item.source != Item.Source.WIKIDATA:
+        return None
+    if not item.meta:
+        return None
+    try:
+        import json
+
+        meta = json.loads(item.meta)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+    parts = []
+    for meta_key, label in _OTHER_ID_KEYS.items():
+        value = meta.get(meta_key)
+        if value:
+            parts.append(f"{label}: {value}")
+    return ", ".join(parts) if parts else None

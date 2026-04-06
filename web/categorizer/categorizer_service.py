@@ -8,6 +8,7 @@ from categorizer.result_parsers import (
     parse_categorization_result,
     parse_categorization_result_with_reasoning,
 )
+from categorizer.wikidata_fetch_service import WikidataFetchService
 from concepts.models import CategorizerResult, Item
 
 # Free LLM types to use for categorization
@@ -39,9 +40,16 @@ class CategorizerService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.llm_service = LLMService()
+        self.wikidata_fetch_service = WikidataFetchService()
 
     def categorize_items(
-        self, limit=None, judge_pool="low", domain=None, source=None, session_name=None
+        self,
+        limit=None,
+        judge_pool="low",
+        domain=None,
+        source=None,
+        fetch=False,
+        session_name=None,
     ):
         """
         Categorize items from the database using all free LLM types.
@@ -90,14 +98,19 @@ class CategorizerService:
             f"{len(pool)} LLMs)"
         )
 
+        use_other_ids = fetch
+
         total_start = time.perf_counter()
         for i, item in enumerate(items_to_process):
             self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
+            if fetch:
+                self.wikidata_fetch_service.fetch_and_store_meta(item)
             self.categorize_item(
                 item,
                 pool=pool,
                 session_name=session_name,
                 judge_pool=judge_pool,
+                use_other_ids=use_other_ids,
             )
 
         total_elapsed = time.perf_counter() - total_start
@@ -112,6 +125,7 @@ class CategorizerService:
         pool=None,
         session_name=None,
         judge_pool="low",
+        use_other_ids=True,
     ):
         """
         Categorize a single item using all free LLM types.
@@ -123,6 +137,7 @@ class CategorizerService:
             pool: List of LLMType to use (defaults to LLM_JUDGE_POOL)
             session_name: Optional session name to tag results
             judge_pool: Which pool tier ("low", "local", or "high")
+            use_other_ids: Include external IDs from meta in prompt
 
         Returns:
             List of categorization results from all LLMs
@@ -135,7 +150,7 @@ class CategorizerService:
         self.logger.debug(f"Categorizing: {item.name}")
 
         prompt = build_categorization_prompt(
-            item, predicate, with_reasoning=use_reasoning
+            item, predicate, with_reasoning=use_reasoning, use_other_ids=use_other_ids
         )
 
         results = []

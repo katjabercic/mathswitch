@@ -36,6 +36,12 @@ class Command(BaseCommand):
             help="Filter by source (e.g. Wd, nL, MW, PW, EoM, WpEN, AUm)",
         )
         parser.add_argument(
+            "--fetch",
+            action="store_true",
+            default=False,
+            help="Fetch entity data from the source API if missing in item.meta",
+        )
+        parser.add_argument(
             "--session-name",
             type=str,
             default=None,
@@ -47,6 +53,7 @@ class Command(BaseCommand):
         judge_pool = options.get("judge_pool")
         domain = options.get("domain")
         source = options.get("source")
+        fetch = options.get("fetch")
         session_name = options.get("session_name")
 
         service = CategorizerService()
@@ -69,6 +76,7 @@ class Command(BaseCommand):
                 judge_pool=judge_pool,
                 domain=domain,
                 source=source,
+                fetch=fetch,
                 session_name=session_name,
             )
             self.stdout.write(self.style.SUCCESS("Categorization complete!"))
