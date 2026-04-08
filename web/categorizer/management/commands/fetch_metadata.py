@@ -26,6 +26,12 @@ class Command(BaseCommand):
             choices=Item.Domain.values,
             help="Filter by domain: math or phys (default: all)",
         )
+        parser.add_argument(
+            "--no-mathworld-id",
+            action="store_true",
+            default=False,
+            help="Count Wikidata items that have metadata but no MathWorld ID",
+        )
 
     def _base_queryset(self, domain):
         queryset = Item.objects.filter(source=Item.Source.WIKIDATA)
@@ -34,9 +40,24 @@ class Command(BaseCommand):
         # Only items without metadata (null or empty)
         return queryset.filter(Q(meta__isnull=True) | Q(meta=""))
 
+    def _has_meta_no_mathworld_queryset(self, domain):
+        queryset = Item.objects.filter(source=Item.Source.WIKIDATA)
+        if domain:
+            queryset = queryset.filter(domain=domain)
+        # Has meta (not null/empty) but does not contain mathworld_id key
+        return queryset.exclude(meta__contains='"mathworld_id"')
+
     def handle(self, *args, **options):
         limit = options.get("limit")
         domain = options.get("domain")
+        no_mathworld_id = options.get("no_mathworld_id")
+
+        if no_mathworld_id:
+            count = self._has_meta_no_mathworld_queryset(domain).count()
+            self.stdout.write(
+                f"Wikidata items with metadata but no MathWorld ID: {count}"
+            )
+            return
 
         total = self._base_queryset(domain).count()
 
