@@ -49,6 +49,9 @@ class CategorizerService:
         domain=None,
         source=None,
         fetch=False,
+        no_mathworld_id=False,
+        has_mathworld_id=False,
+        use_other_ids=False,
         session_name=None,
     ):
         """
@@ -77,8 +80,17 @@ class CategorizerService:
         queryset = Item.objects.filter(domain=domain) if domain else Item.objects.all()
         if source:
             queryset = queryset.filter(source=source)
+        if no_mathworld_id:
+            queryset = queryset.exclude(
+                meta__isnull=True
+            ).exclude(
+                meta=""
+            ).exclude(meta__contains='"mathworld_id"')
+        if has_mathworld_id:
+            queryset = queryset.filter(meta__contains='"mathworld_id"')
         if already_processed_ids:
             queryset = queryset.exclude(id__in=already_processed_ids)
+        queryset = queryset.order_by("id")
         if limit:
             remaining = limit - skipped
             if remaining <= 0:
@@ -98,8 +110,6 @@ class CategorizerService:
             f"{len(pool)} LLMs)"
         )
 
-        use_other_ids = fetch
-
         total_start = time.perf_counter()
         for i, item in enumerate(items_to_process):
             self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
@@ -112,6 +122,7 @@ class CategorizerService:
                 judge_pool=judge_pool,
                 use_other_ids=use_other_ids,
             )
+
 
         total_elapsed = time.perf_counter() - total_start
         self.logger.info(f"Categorization complete in {total_elapsed:.2f}s")

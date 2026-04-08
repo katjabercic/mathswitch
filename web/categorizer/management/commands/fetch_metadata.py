@@ -4,8 +4,6 @@ import time
 from categorizer.wikidata_fetch_service import WikidataFetchService
 from concepts.models import Item
 from django.core.management.base import BaseCommand
-from django.db.models import Q
-
 logger = logging.getLogger(__name__)
 
 
@@ -38,14 +36,18 @@ class Command(BaseCommand):
         if domain:
             queryset = queryset.filter(domain=domain)
         # Only items without metadata (null or empty)
-        return queryset.filter(Q(meta__isnull=True) | Q(meta=""))
+        return queryset.filter(meta__isnull=True) | queryset.filter(meta="")
 
     def _has_meta_no_mathworld_queryset(self, domain):
         queryset = Item.objects.filter(source=Item.Source.WIKIDATA)
         if domain:
             queryset = queryset.filter(domain=domain)
         # Has meta (not null/empty) but does not contain mathworld_id key
-        return queryset.exclude(meta__contains='"mathworld_id"')
+        return queryset.exclude(
+            meta__isnull=True
+        ).exclude(
+            meta=""
+        ).exclude(meta__contains='"mathworld_id"')
 
     def handle(self, *args, **options):
         limit = options.get("limit")

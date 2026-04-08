@@ -42,6 +42,24 @@ class Command(BaseCommand):
             help="Fetch entity data from the source API if missing in item.meta",
         )
         parser.add_argument(
+            "--no-mathworld-id",
+            action="store_true",
+            default=False,
+            help="Only process items that have metadata but no MathWorld ID",
+        )
+        parser.add_argument(
+            "--has-mathworld-id",
+            action="store_true",
+            default=False,
+            help="Only process items that have metadata with a MathWorld ID",
+        )
+        parser.add_argument(
+            "--use-other-ids",
+            action="store_true",
+            default=False,
+            help="Include external IDs from metadata in the LLM prompt",
+        )
+        parser.add_argument(
             "--session-name",
             type=str,
             default=None,
@@ -54,6 +72,9 @@ class Command(BaseCommand):
         domain = options.get("domain")
         source = options.get("source")
         fetch = options.get("fetch")
+        no_mathworld_id = options.get("no_mathworld_id")
+        has_mathworld_id = options.get("has_mathworld_id")
+        use_other_ids = options.get("use_other_ids")
         session_name = options.get("session_name")
 
         service = CategorizerService()
@@ -77,6 +98,9 @@ class Command(BaseCommand):
                 domain=domain,
                 source=source,
                 fetch=fetch,
+                no_mathworld_id=no_mathworld_id,
+                has_mathworld_id=has_mathworld_id,
+                use_other_ids=use_other_ids or fetch,
                 session_name=session_name,
             )
             self.stdout.write(self.style.SUCCESS("Categorization complete!"))
