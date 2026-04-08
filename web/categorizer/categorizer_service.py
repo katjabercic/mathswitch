@@ -81,11 +81,11 @@ class CategorizerService:
         if source:
             queryset = queryset.filter(source=source)
         if no_mathworld_id:
-            queryset = queryset.exclude(
-                meta__isnull=True
-            ).exclude(
-                meta=""
-            ).exclude(meta__contains='"mathworld_id"')
+            queryset = (
+                queryset.exclude(meta__isnull=True)
+                .exclude(meta="")
+                .exclude(meta__contains='"mathworld_id"')
+            )
         if has_mathworld_id:
             queryset = queryset.filter(meta__contains='"mathworld_id"')
         if already_processed_ids:
@@ -122,7 +122,6 @@ class CategorizerService:
                 judge_pool=judge_pool,
                 use_other_ids=use_other_ids,
             )
-
 
         total_elapsed = time.perf_counter() - total_start
         self.logger.info(f"Categorization complete in {total_elapsed:.2f}s")
