@@ -1,6 +1,6 @@
 import logging
 
-from concepts.utils import UnionFind
+from concepts.utils import UnionFind, normalize_concept_name
 from django.db import models
 from django.db.models.functions import Lower
 from django.db.utils import IntegrityError
@@ -8,12 +8,13 @@ from django.db.utils import IntegrityError
 
 class Concept(models.Model):
     name = models.CharField(max_length=200, null=True)
+    normal_name = models.CharField(max_length=200, null=True)
     description = models.TextField(null=True)
 
     class Meta:
         ordering = ["name", "description"]
         constraints = [
-            models.UniqueConstraint(Lower("name").desc(), name="unique_lower_name")
+            models.UniqueConstraint(fields=["normal_name"], name="unique_normal_name")
         ]
 
 
@@ -34,7 +35,7 @@ class ItemQuerySet(models.QuerySet):
                     logging.WARNING,
                     f" A concept named '{new_concept.name}' already exists.",
                 )
-                new_concept = Concept.objects.get(name__iexact=new_concept.name)
+                new_concept = Concept.objects.get(normal_name=new_concept.normal_name)
             item.concept = new_concept
             item.save()
 
@@ -45,8 +46,9 @@ class ItemQuerySet(models.QuerySet):
         components = UnionFind(self.all(), Link.objects.all().to_tuples())
         for concept_items in components.get_item_components(sort_key=Item.Source.key()):
             name = take_first([item.name for item in concept_items])
+            normal_name = normalize_concept_name(name)
             description = take_first([item.description for item in concept_items])
-            new_concept = Concept(name=name, description=description)
+            new_concept = Concept(name=name, normal_name=normal_name, description=description)
             try:
                 new_concept.save()
             except IntegrityError:
@@ -54,7 +56,7 @@ class ItemQuerySet(models.QuerySet):
                     logging.WARNING,
                     f" A concept named '{new_concept.name}' already exists.",
                 )
-                new_concept = Concept.objects.get(name=name)
+                new_concept = Concept.objects.get(normal_name=normal_name)
             for item in concept_items:
                 item.concept = new_concept
                 item.save()
@@ -127,7 +129,7 @@ class Item(models.Model):
         return [i.get_url() for i in self.get_linked_items()]
 
     def to_concept(self):
-        return Concept(name=self.name, description=self.description)
+        return Concept(name=self.name, normal_name=normalize_concept_name(self.name), description=self.description)
 
     def __str__(self):
         if self.name:

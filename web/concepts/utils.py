@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
+from unidecode import unidecode
+
 
 class UnionFind:
     item_to_element: Dict[Any, int] = {}
@@ -57,3 +59,8 @@ class UnionFind:
             return items
 
         return list(map(elements_to_sorted_items, self.components.values()))
+
+
+def normalize_concept_name(name: str) -> str:
+    nyoo = unidecode(name).replace('_', '-').replace(' ', '-').lower()
+    return ''.join(filter(lambda x: x.isalnum() or x == '-', nyoo))
