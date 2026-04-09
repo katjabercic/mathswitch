@@ -66,16 +66,27 @@ class CategorizerService:
             session_name = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         pool = JUDGE_POOLS.get(judge_pool, LLM_JUDGE_POOL)
+        pool_llm_values = {llm.value for llm in pool}
 
         self.logger.info(f"Session name: '{session_name}'")
 
-        already_processed_ids = set(
-            CategorizerResult.objects.filter(session_name=session_name)
-            .values_list("item_id", flat=True)
-            .distinct()
-        )
+        # Build a map of item_id -> set of llm_types already completed
+        existing_results = CategorizerResult.objects.filter(
+            session_name=session_name,
+            llm_type__in=pool_llm_values,
+        ).values_list("item_id", "llm_type")
+        completed_llms_by_item = {}
+        for item_id, llm_type in existing_results:
+            completed_llms_by_item.setdefault(item_id, set()).add(llm_type)
 
-        skipped = len(already_processed_ids)
+        # Items fully covered by all LLMs in the pool can be skipped entirely
+        fully_processed_ids = {
+            item_id
+            for item_id, llm_types in completed_llms_by_item.items()
+            if pool_llm_values <= llm_types
+        }
+
+        skipped = len(fully_processed_ids)
 
         queryset = Item.objects.filter(domain=domain) if domain else Item.objects.all()
         if source:
@@ -88,8 +99,8 @@ class CategorizerService:
             )
         if has_mathworld_id:
             queryset = queryset.filter(meta__contains='"mathworld_id"')
-        if already_processed_ids:
-            queryset = queryset.exclude(id__in=already_processed_ids)
+        if fully_processed_ids:
+            queryset = queryset.exclude(id__in=fully_processed_ids)
         queryset = queryset.order_by("id")
         if limit:
             remaining = limit - skipped
@@ -104,20 +115,39 @@ class CategorizerService:
         items_to_process = list(queryset)
         to_process = len(items_to_process)
 
+        # Count partially processed items
+        partially_processed = sum(
+            1 for item in items_to_process if item.id in completed_llms_by_item
+        )
+
         self.logger.info(
-            f"Items: {skipped} already processed, "
-            f"{to_process} to process (pool={judge_pool}, "
-            f"{len(pool)} LLMs)"
+            f"Items: {skipped} fully processed, "
+            f"{partially_processed} partially processed, "
+            f"{to_process - partially_processed} new "
+            f"(pool={judge_pool}, {len(pool)} LLMs)"
         )
 
         total_start = time.perf_counter()
         for i, item in enumerate(items_to_process):
-            self.logger.info(f"Processing item {i + 1}/{to_process}: {item.identifier}")
+            # Determine which LLMs still need to run for this item
+            done_llms = completed_llms_by_item.get(item.id, set())
+            remaining_pool = [llm for llm in pool if llm.value not in done_llms]
+
+            if done_llms:
+                self.logger.info(
+                    f"Processing item {i + 1}/{to_process}: {item.identifier} "
+                    f"({len(remaining_pool)}/{len(pool)} LLMs remaining)"
+                )
+            else:
+                self.logger.info(
+                    f"Processing item {i + 1}/{to_process}: {item.identifier}"
+                )
+
             if fetch:
                 self.wikidata_fetch_service.fetch_and_store_meta(item)
             self.categorize_item(
                 item,
-                pool=pool,
+                pool=remaining_pool,
                 session_name=session_name,
                 judge_pool=judge_pool,
                 use_other_ids=use_other_ids,
