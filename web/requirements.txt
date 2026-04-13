@@ -19,3 +19,7 @@ transformers~=4.57.0
 torch~=2.9.0
 # Speeds up model loading
 accelerate~=1.12.0
+
+# Classifier evaluation
+matplotlib~=3.10.0
+scikit-learn~=1.7.0

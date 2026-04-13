@@ -2,7 +2,6 @@ import logging
 
 from concepts.utils import UnionFind, normalize_concept_name
 from django.db import models
-from django.db.models.functions import Lower
 from django.db.utils import IntegrityError
 
 
@@ -48,7 +47,9 @@ class ItemQuerySet(models.QuerySet):
             name = take_first([item.name for item in concept_items])
             normal_name = normalize_concept_name(name)
             description = take_first([item.description for item in concept_items])
-            new_concept = Concept(name=name, normal_name=normal_name, description=description)
+            new_concept = Concept(
+                name=name, normal_name=normal_name, description=description
+            )
             try:
                 new_concept.save()
             except IntegrityError:
@@ -129,7 +130,11 @@ class Item(models.Model):
         return [i.get_url() for i in self.get_linked_items()]
 
     def to_concept(self):
-        return Concept(name=self.name, normal_name=normalize_concept_name(self.name), description=self.description)
+        return Concept(
+            name=self.name,
+            normal_name=normalize_concept_name(self.name),
+            description=self.description,
+        )
 
     def __str__(self):
         if self.name:

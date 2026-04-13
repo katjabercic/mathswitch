@@ -62,5 +62,5 @@ class UnionFind:
 
 
 def normalize_concept_name(name: str) -> str:
-    nyoo = unidecode(name).replace('_', '-').replace(' ', '-').lower()
-    return ''.join(filter(lambda x: x.isalnum() or x == '-', nyoo))
+    nyoo = unidecode(name).replace("_", "-").replace(" ", "-").lower()
+    return "".join(filter(lambda x: x.isalnum() or x == "-", nyoo))
