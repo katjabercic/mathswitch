@@ -289,10 +289,13 @@ class Command(BaseCommand):
         ax.plot(fpr_c, tpr_c, linewidth=2, label=f"Included (AUC={auc_c:.3f})")
         ax.plot(fpr_d, tpr_d, linewidth=2, label=f"Excluded (AUC={auc_d:.3f})")
         ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random")
-        ax.set_xlabel("False Positive Rate")
-        ax.set_ylabel("True Positive Rate")
-        ax.set_title("ROC Curve (MathWorld identifier included vs. excluded)")
-        ax.legend(loc="lower right")
+        ax.set_xlabel("False Positive Rate", fontsize=12)
+        ax.set_ylabel("True Positive Rate", fontsize=12)
+        ax.set_title(
+            "ROC Curve (MathWorld identifier included vs. excluded)", fontsize=14
+        )
+        ax.tick_params(axis="both", labelsize=12)
+        ax.legend(loc="lower right", fontsize=12)
         fig.tight_layout()
         fig.savefig(os.path.join(output_dir, "roc_curve.png"), dpi=150)
         plt.close(fig)
@@ -342,13 +345,15 @@ class Command(BaseCommand):
             label=f"Without MathWorld ID (AUC={auc_wo:.3f})",
         )
         ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random")
-        ax.set_xlabel("False Positive Rate")
-        ax.set_ylabel("True Positive Rate")
+        ax.set_xlabel("False Positive Rate", fontsize=12)
+        ax.set_ylabel("True Positive Rate", fontsize=12)
         ax.set_title(
             f"ROC Curve (n={len(common_ids)}, "
-            "labels = include-MW-ID aggregated answer)"
+            "labels = include-MW-ID aggregated answer)",
+            fontsize=14,
         )
-        ax.legend(loc="lower right")
+        ax.tick_params(axis="both", labelsize=12)
+        ax.legend(loc="lower right", fontsize=12)
         fig.tight_layout()
         fig.savefig(os.path.join(output_dir, "roc_curve_labeled.png"), dpi=150)
         plt.close(fig)
