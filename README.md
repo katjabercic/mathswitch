@@ -124,16 +124,6 @@ python web/manage.py migrate
 make migrate
 ```
 
-## Instructions for Katja to update the live version
-```bash
-sudo systemctl stop mathswitch
-cd mathswitch
-git pull
-source venv/bin/activate
-cd web
-./manage.py rebuild_db
-sudo systemctl start mathswitch
-```
 ## WD item JSON example
 
 ```json
@@ -150,6 +140,55 @@ sudo systemctl start mathswitch
 ```
 
 ## WD query examples
+
+### Query example from the paper
+
+```
+SELECT DISTINCT
+  ?item ?label ?desc ?image ?wp_en ?nlab ?mw ?pw ?eom
+  (GROUP_CONCAT(DISTINCT ?alt; separator=", ") AS ?aliases)
+WHERE {
+  # Property path: instances of a topic
+  # studied by mathematics
+  ?item  wdt:P31   ?topic .
+  ?topic wdt:P2579 wd:Q395 .
+  # External identifiers (optional)
+  OPTIONAL { ?item wdt:P4215 ?nlab . }
+  OPTIONAL { ?item wdt:P2812 ?mw   . }
+  OPTIONAL { ?item wdt:P6781 ?pw   . }
+  OPTIONAL { ?item wdt:P7554 ?eom  . }
+  # Image and Wikipedia article (optional)
+  OPTIONAL { ?item wdt:P18 ?image . }
+  OPTIONAL {
+    ?wp_en rdf:type schema:Article ;
+           schema:isPartOf
+             <https://en.wikipedia.org/> ;
+           schema:about ?item .
+  }
+  # Aliases
+  OPTIONAL {
+    ?item skos:altLabel ?alt .
+    FILTER (lang(?alt) = "en")
+  }
+  # Exclusions
+  FILTER NOT EXISTS {
+    VALUES ?excludedType {
+      wd:Q21199 wd:Q28920044
+      wd:Q6256  wd:Q714737
+    }
+    ?item wdt:P31 ?excludedType .
+  }
+  FILTER NOT EXISTS { ?item wdt:P31 wd:Q5 . }
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en" .
+  }
+}
+GROUP BY ?item ?label ?desc ?image ?wp_en ?nlab ?mw ?pw ?eom
+ORDER BY ?item
+LIMIT 1000 OFFSET 0
+```
+
+### Other examples
 
 ```
   ?item ?image
