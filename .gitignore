@@ -3,4 +3,4 @@ __pycache__
 .idea
 **/*.sqlite3
 **/.env
-.web/classifier_reports
+./web/classifier_reports

@@ -139,6 +139,7 @@ class Command(BaseCommand):
         auc_c, auc_d = self._plot_roc_curve(
             output_dir, tp_results, obs_results, ground_truth
         )
+        self._plot_roc_curve_labeled(output_dir, tp_preds, obs_preds, results_limit)
         self._plot_precision_recall_curve(
             output_dir, tp_results, obs_results, ground_truth
         )
@@ -285,22 +286,72 @@ class Command(BaseCommand):
         auc_d = auc(fpr_d, tpr_d)
 
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.plot(
-            fpr_c, tpr_c, linewidth=2, label=f"Table C: tp+results (AUC={auc_c:.3f})"
-        )
-        ax.plot(
-            fpr_d, tpr_d, linewidth=2, label=f"Table D: obs+results (AUC={auc_d:.3f})"
-        )
+        ax.plot(fpr_c, tpr_c, linewidth=2, label=f"Included (AUC={auc_c:.3f})")
+        ax.plot(fpr_d, tpr_d, linewidth=2, label=f"Excluded (AUC={auc_d:.3f})")
         ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random")
         ax.set_xlabel("False Positive Rate")
         ax.set_ylabel("True Positive Rate")
-        ax.set_title("ROC Curve")
+        ax.set_title("ROC Curve (MathWorld identifier included vs. excluded)")
         ax.legend(loc="lower right")
         fig.tight_layout()
         fig.savefig(os.path.join(output_dir, "roc_curve.png"), dpi=150)
         plt.close(fig)
 
         return auc_c, auc_d
+
+    def _plot_roc_curve_labeled(self, output_dir, tp_preds, obs_preds, limit):
+        common_ids = sorted(set(tp_preds) & set(obs_preds))[:limit]
+        if not common_ids:
+            self.stdout.write(
+                self.style.WARNING("Skipping labeled ROC: no common items")
+            )
+            return
+
+        labels = np.array([1 if tp_preds[i][0] else 0 for i in common_ids], dtype=int)
+        scores_with = np.array(
+            [tp_preds[i][1] / 100.0 for i in common_ids], dtype=float
+        )
+        scores_without = np.array(
+            [obs_preds[i][1] / 100.0 for i in common_ids], dtype=float
+        )
+
+        if len(np.unique(labels)) < 2:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Skipping labeled ROC: include-MW-ID answers are single-class"
+                )
+            )
+            return
+
+        fpr_w, tpr_w, _ = roc_curve(labels, scores_with)
+        auc_w = auc(fpr_w, tpr_w)
+        fpr_wo, tpr_wo, _ = roc_curve(labels, scores_without)
+        auc_wo = auc(fpr_wo, tpr_wo)
+
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.plot(
+            fpr_w,
+            tpr_w,
+            linewidth=2,
+            label=f"With MathWorld ID (AUC={auc_w:.3f})",
+        )
+        ax.plot(
+            fpr_wo,
+            tpr_wo,
+            linewidth=2,
+            label=f"Without MathWorld ID (AUC={auc_wo:.3f})",
+        )
+        ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random")
+        ax.set_xlabel("False Positive Rate")
+        ax.set_ylabel("True Positive Rate")
+        ax.set_title(
+            f"ROC Curve (n={len(common_ids)}, "
+            "labels = include-MW-ID aggregated answer)"
+        )
+        ax.legend(loc="lower right")
+        fig.tight_layout()
+        fig.savefig(os.path.join(output_dir, "roc_curve_labeled.png"), dpi=150)
+        plt.close(fig)
 
     def _plot_precision_recall_curve(
         self, output_dir, tp_results, obs_results, ground_truth
