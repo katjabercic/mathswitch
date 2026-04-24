@@ -32,7 +32,7 @@ class LmfdbSlurper:
         )
 
     def save_items(self, force: bool = False):
-        if not force and not SlurperRun.should_run(self.source, self.MIN_INTERVAL):
+        if not force and not SlurperRun.can_run(self.source, self.MIN_INTERVAL):
             logging.info(
                 f"[{self.source.label}] skipped: ran less than "
                 f"{self.MIN_INTERVAL.days} days ago (use --force to override)."

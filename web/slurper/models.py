@@ -11,7 +11,7 @@ class SlurperRun(models.Model):
     last_succeeded_at = models.DateTimeField()
 
     @classmethod
-    def should_run(cls, source: str, min_interval: timedelta) -> bool:
+    def can_run(cls, source: str, min_interval: timedelta) -> bool:
         try:
             last = cls.objects.get(source=source).last_succeeded_at
         except cls.DoesNotExist:

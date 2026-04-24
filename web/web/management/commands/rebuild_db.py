@@ -6,6 +6,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("clearing data: agda-unimath")
         call_command("clear_agda_unimath")
+        print(
+            "clearing data: LMFDB "
+            "(skipped if the LMFDB slurper ran in the last 7 days; "
+            "use `clear_lmfdb --force` to override)"
+        )
+        call_command("clear_lmfdb")
         print("clearing data: Wikidata")
         call_command("clear_wikidata")
         print("clearing data: concepts")
@@ -15,6 +21,12 @@ class Command(BaseCommand):
         call_command("import_wikidata")
         print("importing data: agda-unimath")
         call_command("import_agda_unimath")
+        print(
+            "importing data: LMFDB "
+            "(skipped if the LMFDB slurper ran in the last 7 days; "
+            "use `import_lmfdb --force` to override)"
+        )
+        call_command("import_lmfdb")
         print("linking: items with the same name")
         call_command("link_same")
         print("computing concepts")
