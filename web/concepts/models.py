@@ -76,6 +76,7 @@ class Item(models.Model):
         ENCYCLOPEDIA_OF_MATHEMATICS = "EoM", "Encyclopedia of Mathematics"
         WIKIPEDIA_EN = "WpEN", "Wikipedia (English)"
         AGDA_UNIMATH = "AUm", "Agda Unimath"
+        LMFDB = "LMF", "The L-functions and modular forms database"
 
         @staticmethod
         def key():
@@ -87,6 +88,7 @@ class Item(models.Model):
                 Item.Source.PROOF_WIKI,
                 Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS,
                 Item.Source.AGDA_UNIMATH,
+                Item.Source.LMFDB,
             ]
             return lambda item: SOURCES.index(item.source)
 
@@ -94,9 +96,9 @@ class Item(models.Model):
         max_length=4, choices=Domain.choices, default=Domain.MATHEMATICS
     )
     source = models.CharField(max_length=4, choices=Source.choices)
-    identifier = models.CharField(max_length=200)
-    url = models.URLField(max_length=200)
-    name = models.CharField(max_length=200, null=True)
+    identifier = models.CharField(max_length=300)
+    url = models.URLField(max_length=300)
+    name = models.CharField(max_length=300, null=True)
     description = models.TextField(null=True)
     keywords = models.TextField(null=True, blank=True)
     article_text = models.TextField(null=True, blank=True)
