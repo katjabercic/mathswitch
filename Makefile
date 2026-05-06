@@ -23,7 +23,7 @@ install-scispacy:
 start:
 	python ./web/manage.py runserver
 
-populate-db:
+import-wikidata:
 	python ./web/manage.py import_wikidata
 
 clear-db:
@@ -46,3 +46,6 @@ create-migrations:
 
 migrate:
 	python ./web/manage.py migrate
+
+import-lmfdb:
+	python ./web/manage.py import_lmfdb
