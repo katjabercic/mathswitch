@@ -10,7 +10,9 @@ MIN_INTERVAL = timedelta(days=7)
 
 
 class Command(BaseCommand):
-    help = "Delete all LMFDB items. Guarded by a 7-day throttle; use --force to override."
+    help = (
+        "Delete all LMFDB items. Guarded by a 7-day throttle; use --force to override."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -23,10 +25,14 @@ class Command(BaseCommand):
         source = Item.Source.LMFDB
         if not force and not SlurperRun.can_run(source, MIN_INTERVAL):
             if sys.stdin.isatty():
-                answer = input(
-                    f"LMFDB slurper ran within the last {MIN_INTERVAL.days} days. "
-                    f"Clear anyway? [y/N] "
-                ).strip().lower()
+                answer = (
+                    input(
+                        f"LMFDB slurper ran within the last {MIN_INTERVAL.days} days. "
+                        f"Clear anyway? [y/N] "
+                    )
+                    .strip()
+                    .lower()
+                )
                 if answer not in ("y", "yes"):
                     logging.info(f"[{source.label}] clear cancelled.")
                     return
