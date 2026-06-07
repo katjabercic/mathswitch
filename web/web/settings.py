@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from os import path
 from pathlib import Path
 
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -187,3 +187,8 @@ WIKIDATA_PAGE_SIZE = config("WIKIDATA_PAGE_SIZE", default=1000, cast=int)
 # Feature flags
 IMPORT_MATH_ENTITIES = config("IMPORT_MATH_ENTITIES", default=True, cast=bool)
 IMPORT_PHYSICS_ENTITIES = config("IMPORT_PHYSICS_ENTITIES", default=False, cast=bool)
+
+# Which Item/Concept domains the UI exposes. Comma-separated list of domain
+# codes (see concepts.models.Domain), e.g. "math" or "math,phys". A single
+# entry locks the entire UI to that domain.
+UI_DOMAINS = config("UI_DOMAINS", default="math", cast=Csv())

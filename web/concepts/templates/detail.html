@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>{{ concept.name }}</h2>
+  <h2>{{ concept.display_name }}</h2>
   {% if concept.description != None %}
     <p>{{ concept.description }}</p>
   {% else %}
   <p>(no description is available)</p>
   {% endif %}
   {% for item in concept.items %}
-    <a href="{{ item.url }}">{{ item.source }}: {{ item.name }}</a> <br>
+    <a href="{{ item.url }}">{{ item.source }}: {{ item.display_name }}</a> <br>
   {% endfor %}
 {% endblock %}

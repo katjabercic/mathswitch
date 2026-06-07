@@ -1,20 +1,42 @@
 import logging
 
-from concepts.utils import UnionFind, normalize_concept_name
+from concepts.utils import (
+    UnionFind,
+    humanize_concept_name,
+    normalize_concept_name,
+)
 from django.db import models
 from django.db.utils import IntegrityError
+
+
+class Domain(models.TextChoices):
+    MATHEMATICS = "math", "Mathematics"
+    PHYSICS = "phys", "Physics"
 
 
 class Concept(models.Model):
     name = models.CharField(max_length=200, null=True)
     normal_name = models.CharField(max_length=200, null=True)
     description = models.TextField(null=True)
+    domain = models.CharField(
+        max_length=4, choices=Domain.choices, default=Domain.MATHEMATICS
+    )
 
     class Meta:
         ordering = ["name", "description"]
         constraints = [
             models.UniqueConstraint(fields=["normal_name"], name="unique_normal_name")
         ]
+
+    @property
+    def display_name(self):
+        """Human-readable label for the UI, derived on the fly from ``name``.
+
+        This is a transient field (no database column): it is computed at
+        access time and is not stored or queryable. ``name`` remains the raw
+        source label and ``normal_name`` the canonical slug used for routing.
+        """
+        return humanize_concept_name(self.name)
 
 
 class LinkQuerySet(models.QuerySet):
@@ -47,8 +69,15 @@ class ItemQuerySet(models.QuerySet):
             name = take_first([item.name for item in concept_items])
             normal_name = normalize_concept_name(name)
             description = take_first([item.description for item in concept_items])
+            domain = (
+                take_first([item.domain for item in concept_items])
+                or Domain.MATHEMATICS
+            )
             new_concept = Concept(
-                name=name, normal_name=normal_name, description=description
+                name=name,
+                normal_name=normal_name,
+                description=description,
+                domain=domain,
             )
             try:
                 new_concept.save()
@@ -64,9 +93,7 @@ class ItemQuerySet(models.QuerySet):
 
 
 class Item(models.Model):
-    class Domain(models.TextChoices):
-        MATHEMATICS = "math", "Mathematics"
-        PHYSICS = "phys", "Physics"
+    Domain = Domain
 
     class Source(models.TextChoices):
         WIKIDATA = "Wd", "Wikidata"
@@ -117,7 +144,14 @@ class Item(models.Model):
         unique_together = ["source", "identifier"]
 
     def to_dict(self):
-        return {"name": self.name, "source": self.get_source_display(), "url": self.url}
+        normal_name = self.concept.normal_name if self.concept_id else None
+        return {
+            "name": self.name,
+            "normal_name": normal_name or self.name,
+            "display_name": humanize_concept_name(self.name),
+            "source": self.get_source_display(),
+            "url": self.url,
+        }
 
     def get_linked_items(self):
         linked_destinations = Link.objects.filter(source=self.id).map(
@@ -136,6 +170,7 @@ class Item(models.Model):
             name=self.name,
             normal_name=normalize_concept_name(self.name),
             description=self.description,
+            domain=self.domain,
         )
 
     def __str__(self):

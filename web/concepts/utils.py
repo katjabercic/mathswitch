@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Tuple
+from urllib.parse import unquote
 
 from unidecode import unidecode
 
@@ -62,5 +63,22 @@ class UnionFind:
 
 
 def normalize_concept_name(name: str) -> str:
-    nyoo = unidecode(name).replace("_", "-").replace(" ", "-").lower()
+    decoded = unquote(name) if name else ""
+    nyoo = unidecode(decoded).replace("_", "-").replace(" ", "-").lower()
     return "".join(filter(lambda x: x.isalnum() or x == "-", nyoo))
+
+
+def humanize_concept_name(name: str) -> str:
+    """Turn a raw source name into a human-readable UI label.
+
+    Unlike :func:`normalize_concept_name` (which produces a lowercase, ASCII,
+    URL-safe slug for lookups and routing), this keeps the original casing and
+    diacritics and only undoes the artifacts of URL-derived names: it
+    percent-decodes the string and turns underscores back into spaces.
+
+    Examples:
+        ``Sasakian_manifold``   -> ``Sasakian manifold``
+        ``M%C3%B6bius_strip``   -> ``Möbius strip``
+        ``Möbius strip``        -> ``Möbius strip`` (unchanged)
+    """
+    return unquote(name).replace("_", " ") if name else ""

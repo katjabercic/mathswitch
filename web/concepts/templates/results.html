@@ -8,7 +8,7 @@
 
 <ul id="results">
   {% for concept in results %}
-    <li><a href="/concept/{{ concept }}">{{ concept }}</a></li>
+    <li><a href="/concept/{{ concept.normal_name }}">{{ concept.display_name }}</a></li>
   {% endfor %}
 </ul>
 
