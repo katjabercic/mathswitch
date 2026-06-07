@@ -1,5 +1,6 @@
 from concepts.models import Concept, Item
-from concepts.utils import normalize_concept_name
+from concepts.utils import normalize_concept_name, search_variants
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from web.settings import UI_DOMAINS
@@ -27,6 +28,11 @@ def concept(request, name):
                 ],
             }
         }
+        # Only when reached via search (carries ?q=) do we offer the broader
+        # results list, so direct/linked visits stay clean.
+        query = request.GET.get("q")
+        if query:
+            context["search_query"] = query
         return render(request, "detail.html", context)
     except Concept.DoesNotExist:
         return redirect("/results/" + name)
@@ -57,7 +63,8 @@ def home(request):
 
 def search(request):
     search_value = request.GET.get("q") or ""
-    return redirect("/concept/" + normalize_concept_name(search_value))
+    slug = normalize_concept_name(search_value)
+    return redirect(f"/concept/{slug}?q={slug}")
 
 
 def redirect_item_to_concept(request, source, identifier):
@@ -67,8 +74,10 @@ def redirect_item_to_concept(request, source, identifier):
 
 
 def results(request, query):
-    normalized = normalize_concept_name(query)
-    concepts = _concepts_in_scope().filter(normal_name__contains=normalized)
+    name_filter = Q()
+    for variant in search_variants(query):
+        name_filter |= Q(normal_name__contains=variant)
+    concepts = _concepts_in_scope().filter(name_filter)
     context = {
         "query": query,
         "results": [

@@ -68,6 +68,26 @@ def normalize_concept_name(name: str) -> str:
     return "".join(filter(lambda x: x.isalnum() or x == "-", nyoo))
 
 
+# German-umlaut digraphs and the single-letter form unidecode already produces
+# for the diacritic itself (ö -> o, ä -> a, ü -> u).
+_UMLAUT_DIGRAPHS = (("oe", "o"), ("ae", "a"), ("ue", "u"))
+
+
+def search_variants(name: str) -> set:
+    """Expand a search query into the slugs worth matching against.
+
+    Returns the normalized slug plus a German-digraph-collapsed variant, so a
+    typed ``moebius`` also matches a stored ``mobius``. This is query-only: it
+    does not touch ``normalize_concept_name`` or any stored data. If new fuzzing
+    cases come up, add them here rather than re-normalizing the database.
+    """
+    base = normalize_concept_name(name)
+    collapsed = base
+    for digraph, single in _UMLAUT_DIGRAPHS:
+        collapsed = collapsed.replace(digraph, single)
+    return {base, collapsed}
+
+
 def humanize_concept_name(name: str) -> str:
     """Turn a raw source name into a human-readable UI label.
 

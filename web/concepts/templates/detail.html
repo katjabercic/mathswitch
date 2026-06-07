@@ -10,4 +10,7 @@
   {% for item in concept.items %}
     <a href="{{ item.url }}">{{ item.source }}: {{ item.display_name }}</a> <br>
   {% endfor %}
+  {% if search_query %}
+    <p><a href="/results/{{ search_query }}">Other search results for “{{ concept.display_name }}”</a></p>
+  {% endif %}
 {% endblock %}
