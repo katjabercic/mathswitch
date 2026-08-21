@@ -104,6 +104,7 @@ class Item(models.Model):
         WIKIPEDIA_EN = "WpEN", "Wikipedia (English)"
         AGDA_UNIMATH = "AUm", "Agda Unimath"
         LMFDB = "LMF", "The L-functions and modular forms database"
+        HOUSE_OF_GRAPHS = "HoG", "House of Graphs"
 
         @staticmethod
         def key():
@@ -116,6 +117,7 @@ class Item(models.Model):
                 Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS,
                 Item.Source.AGDA_UNIMATH,
                 Item.Source.LMFDB,
+                Item.Source.HOG,
             ]
             return lambda item: SOURCES.index(item.source)
 
