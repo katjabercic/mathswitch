@@ -49,3 +49,7 @@ migrate:
 
 import-lmfdb:
 	python ./web/manage.py import_lmfdb
+
+import-house-of-graphs:
+	python ./web/manage.py import_house_of_graphs
+
