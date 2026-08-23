@@ -29,7 +29,7 @@ class HoGSlurper:
         try:
             item = Item(
                 source=self.source,
-                identifier=invariant['invariantId'],
+                identifier=str(invariant['invariantId']),
                 url=f"https://houseofgraphs.org/invariants/api/{invariant['invariantId']}",
                 name=invariant['invariantName'],
                 description=BeautifulSoup(invariant['definition'], 'html.parser').get_text(),

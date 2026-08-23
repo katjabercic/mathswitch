@@ -11,7 +11,9 @@ class Command(BaseCommand):
             "(skipped if the LMFDB slurper ran in the last 7 days; "
             "use `clear_lmfdb --force` to override)"
         )
+        print("clearing data: House of Graphs")
         call_command("clear_lmfdb")
+        call_command("clear_house_of_graphs")
         print("clearing data: Wikidata")
         call_command("clear_wikidata")
         print("clearing data: concepts")
@@ -27,6 +29,8 @@ class Command(BaseCommand):
             "use `import_lmfdb --force` to override)"
         )
         call_command("import_lmfdb")
+        print("importing data: House of Graphs")
+        call_command("import_house_of_graphs")
         print("linking: items with the same name")
         call_command("link_same")
         print("computing concepts")
