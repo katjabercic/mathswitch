@@ -1,51 +1,49 @@
 import logging
+from typing import Optional
 
 import requests
-from bs4 import BeautifulSoup
 from concepts.models import Item
 from django.db.utils import IntegrityError
+from django.utils.html import strip_tags
 from slurper.models import SlurperRun
 
 
 class HoGSlurper:
     JSON_URL = "https://houseofgraphs.org/api/invariants"
+    INVARIANT_URL_PREFIX = "https://houseofgraphs.org/invariants/"
 
     def __init__(self):
         self.source = Item.Source.HOUSE_OF_GRAPHS
-        pass
 
     def fetch_invariant_model_list(self):
-        with requests.get(f"{self.JSON_URL}") as response:
-            if not response:
-                print("No response")
-            else:
-                data = response.json()
-                invariant_model_list = data["_embedded"]["invariantModelList"]
-                return invariant_model_list
+        response = requests.get(self.JSON_URL)
+        response.raise_for_status()
+        return response.json()["_embedded"]["invariantModelList"]
 
-    def invariant_to_item(self, invar) -> Item:
+    def invariant_to_item(self, invariant) -> Optional[Item]:
         try:
-            item = Item(
+            identifier = str(invariant["invariantId"])
+            return Item(
                 source=self.source,
-                identifier=str(invar["invariantId"]),
-                url=f"https://houseofgraphs.org/invariants/api/{invar['invariantId']}",
-                name=invar["invariantName"],
-                description=BeautifulSoup(
-                    invar["definition"], "html.parser"
-                ).get_text(),
+                identifier=identifier,
+                url=self.INVARIANT_URL_PREFIX + identifier,
+                name=invariant["invariantName"],
+                description=strip_tags(invariant["definition"]),
             )
-            return item
-        except KeyError as e:
-            print(f"KeyError: {e} not in invar. {invar.get('invariantId', 'unknown')}.")
+        except KeyError as missing_field:
+            logging.warning(
+                f"[{self.source.label}] skipped invariant "
+                f"{invariant.get('invariantId', '<no id>')}: "
+                f"missing field {missing_field}."
+            )
             return None
 
     def save_items(self):
-        invariant_model_list = self.fetch_invariant_model_list()
-
         total_saved = 0
-        for invariantModel in invariant_model_list:
-            invariant = invariantModel["entity"]
-            item = self.invariant_to_item(invariant)
+        for invariant_model in self.fetch_invariant_model_list():
+            item = self.invariant_to_item(invariant_model["entity"])
+            if item is None:
+                continue
             try:
                 item.save()
                 total_saved += 1

@@ -117,7 +117,7 @@ class Item(models.Model):
                 Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS,
                 Item.Source.AGDA_UNIMATH,
                 Item.Source.LMFDB,
-                Item.Source.HOG,
+                Item.Source.HOUSE_OF_GRAPHS,
             ]
             return lambda item: SOURCES.index(item.source)
 
