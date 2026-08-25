@@ -8,7 +8,7 @@ For a demonstration of a page with at least one link, see for example `{baseurl}
 
 To prepare pyenv (`venv`) make sure to have `pyenv` installed, then run
 ```bash
-make prepare-env
+make prepare-venv
 source venv/bin/activate
 ```
 
@@ -43,14 +43,7 @@ In order to use the administrative interface, you need to create an admin user:
 python web/manage.py createsuperuser
 ```
 
-Finally, to populate the database, run
-
-```bash
-python web/manage.py import_wikidata
-# OR
-make populate-db
-```
-
+Finally, populate the database.
   * In order to fetch wikipedia articles and extract keywords from them:
     ```bash
     make install-scispacy
@@ -58,6 +51,14 @@ make populate-db
     then configure your email `WIKIPEDIA_CONTACT_EMAIL` in [source_wikidata.py](web/slurper/source_wikidata.py)
     * This is needed
   * Then run the database population (make sure your db is cleared)
+
+ To populate the database run
+
+```bash
+python web/manage.py import_wikidata
+# OR
+make populate-db
+```
 
 
 
