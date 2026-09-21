@@ -52,3 +52,6 @@ import-lmfdb:
 
 import-house-of-graphs:
 	python ./web/manage.py import_house_of_graphs
+
+import-oeis:
+	python ./web/manage.py import_oeis
