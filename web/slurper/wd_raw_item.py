@@ -20,6 +20,10 @@ WD_OTHER_SOURCES = {
         "wd_property": "wdt:P7554",
         "json_key": "eomID",
     },
+    Item.Source.OEIS: {
+        "wd_property": "wdt:P829",
+        "json_key": "oeisID",
+    },
 }
 # Wikipedia is dealt with elsewhere
 
@@ -123,6 +127,8 @@ class BaseWdRawItem:
                 return PWRawItem(json_item, domain=domain)
             case Item.Source.ENCYCLOPEDIA_OF_MATHEMATICS:
                 return EoMRawItem(json_item, domain=domain)
+            case Item.Source.OEIS:
+                return OEISRawItem(json_item, domain=domain)
             case Item.Source.WIKIPEDIA_EN:
                 return WpENRawItem(json_item, domain=domain)
 
@@ -219,3 +225,11 @@ class EoMRawItem(OtherWdRawItem):
 
     def url(self):
         return "https://encyclopediaofmath.org/wiki/" + self.identifier()
+
+
+class OEISRawItem(OtherWdRawItem):
+    def __init__(self, json_item, domain=Item.Domain.MATHEMATICS):
+        super().__init__(Item.Source.OEIS, json_item, domain=domain)
+
+    def url(self):
+        return "https://oeis.org/" + self.identifier()
