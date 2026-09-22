@@ -1,12 +1,21 @@
+"""
+Slurper for the On-Line Encyclopedia of Integer Sequences (OEIS).
+
+Sequence names are fetched from the OEIS names.gz dump. OEIS content is
+licensed under CC-BY-SA-4.0 by The On-Line Encyclopedia of Integer
+Sequences, https://oeis.org/.
+"""
+
 import gzip
 import logging
 from datetime import timedelta
-from typing import Iterator, Tuple
+from typing import Iterator, Optional, Tuple
 
 import requests
-from concepts.models import Item
-from django.db.utils import IntegrityError
+from concepts.models import Item, Link
 from slurper.models import SlurperRun
+
+from web.settings import WIKIPEDIA_CONTACT_EMAIL
 
 
 class OeisSlurper:
@@ -18,7 +27,8 @@ class OeisSlurper:
         self.source = Item.Source.OEIS
 
     def fetch_names(self) -> bytes:
-        response = requests.get(self.NAMES_URL)
+        headers = {"User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})"}
+        response = requests.get(self.NAMES_URL, headers=headers)
         response.raise_for_status()
         return gzip.decompress(response.content)
 
@@ -41,6 +51,12 @@ class OeisSlurper:
             description=description,
         )
 
+    def extract_candidate_name(self, description: str) -> Optional[str]:
+        if ":" not in description:
+            return None
+        candidate = description.split(":", 1)[0].strip()
+        return candidate or None
+
     def save_items(self, force: bool = False):
         if not force and not SlurperRun.can_run(self.source, self.MIN_INTERVAL):
             logging.info(
@@ -48,19 +64,39 @@ class OeisSlurper:
                 f"{self.MIN_INTERVAL.days} days ago (use --force to override)."
             )
             return
-        total_saved = 0
+        total_filled = 0
+        total_linked = 0
         for identifier, description in self.parse_names(self.fetch_names()):
-            item = self.line_to_item(identifier, description)
-            try:
-                item.save()
-                total_saved += 1
-            except IntegrityError:
-                logging.info(
-                    f"Item {item.source} {item.identifier} is already in the database."
+            existing = Item.objects.filter(
+                source=self.source, identifier=identifier
+            ).first()
+            if existing is not None:
+                existing.description = description
+                existing.save(update_fields=["description"])
+                total_filled += 1
+                continue
+
+            candidate_name = self.extract_candidate_name(description)
+            if candidate_name is None:
+                continue
+            matches = list(
+                Item.objects.exclude(source=self.source).filter(
+                    name__iexact=candidate_name
                 )
+            )
+            if not matches:
+                continue
+
+            item = self.line_to_item(identifier, description)
+            item.save()
+            for match in matches:
+                Link.save_new(item, match, Link.Label.NAME_EQ)
+                total_linked += 1
+
         SlurperRun.mark_ran(self.source)
         logging.info(
-            f"[{self.source.label}] save_items finished: {total_saved} items saved."
+            f"[{self.source.label}] save_items finished: "
+            f"{total_filled} shells filled, {total_linked} NAME_EQ links created."
         )
 
 
