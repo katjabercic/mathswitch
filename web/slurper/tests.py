@@ -63,7 +63,7 @@ class HouseOfGraphsCommandsTest(TestCase):
 
 # The following tests define what "done" means for the OEIS slurper's scoping
 # rewrite (only import Wikidata-known A-numbers or NAME_EQ matches, fill in
-# Wikidata-bridge shell items, credit the license, set a User-Agent). 
+# Wikidata-bridge shell items, credit the license, set a User-Agent).
 
 
 class OeisSlurperTest(TestCase):
