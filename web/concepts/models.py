@@ -105,6 +105,7 @@ class Item(models.Model):
         AGDA_UNIMATH = "AUm", "Agda Unimath"
         LMFDB = "LMF", "The L-functions and modular forms database"
         HOUSE_OF_GRAPHS = "HoG", "House of Graphs"
+        OEIS = "OEIS", "OEIS"
 
         @staticmethod
         def key():
@@ -118,6 +119,7 @@ class Item(models.Model):
                 Item.Source.AGDA_UNIMATH,
                 Item.Source.LMFDB,
                 Item.Source.HOUSE_OF_GRAPHS,
+                Item.Source.OEIS,
             ]
             return lambda item: SOURCES.index(item.source)
 

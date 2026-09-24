@@ -163,7 +163,7 @@ STATIC_ROOT = "/var/www/mathswitch/static"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-WIKIPEDIA_CONTACT_EMAIL = config("WIKIPEDIA_CONTACT_EMAIL", default="my@email.com")
+MATHSWITCH_CONTACT_EMAIL = config("MATHSWITCH_CONTACT_EMAIL", default="my@email.com")
 
 # Logging
 # NOTE SST: Change if needed, this is for visibility when running the commands

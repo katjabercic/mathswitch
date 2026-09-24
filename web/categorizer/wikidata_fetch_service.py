@@ -5,7 +5,7 @@ import time
 import requests
 from concepts.models import Item
 
-from web.settings import WIKIPEDIA_CONTACT_EMAIL
+from web.settings import MATHSWITCH_CONTACT_EMAIL
 
 WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
 
@@ -27,7 +27,7 @@ class WikidataFetchService:
 
     def get_headers(self):
         return {
-            "User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})",
+            "User-Agent": f"MathSwitch/1.0 ({MATHSWITCH_CONTACT_EMAIL})",
             "Accept": "application/json",
         }
 
