@@ -56,6 +56,7 @@ def home(request):
             ).count(),
             "agda_unimath": items.filter(source=Item.Source.AGDA_UNIMATH).count(),
             "lmfdb": items.filter(source=Item.Source.LMFDB).count(),
+            "oeis": items.filter(source=Item.Source.OEIS).count(),
         },
     }
     return render(request, "index.html", context)
