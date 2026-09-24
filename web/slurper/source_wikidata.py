@@ -10,8 +10,8 @@ from slurper.wd_raw_item import WD_OTHER_SOURCES, BaseWdRawItem
 from web.settings import (
     IMPORT_MATH_ENTITIES,
     IMPORT_PHYSICS_ENTITIES,
+    MATHSWITCH_CONTACT_EMAIL,
     WIKIDATA_PAGE_SIZE,
-    WIKIPEDIA_CONTACT_EMAIL,
 )
 
 # Wikipedia API contact email (required by Wikipedia API guidelines)
@@ -233,7 +233,7 @@ ORDER BY ?item
 
     def get_headers(self):
         return {
-            "User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})",
+            "User-Agent": f"MathSwitch/1.0 ({MATHSWITCH_CONTACT_EMAIL})",
             "Accept": "application/json",
             "Accept-Language": "en-US,en;q=0.9",
         }
@@ -242,13 +242,13 @@ ORDER BY ?item
         global _missing_email_logged
 
         # Check if contact email is configured
-        if WIKIPEDIA_CONTACT_EMAIL is None:
+        if MATHSWITCH_CONTACT_EMAIL is None:
             if not _missing_email_logged:
                 logging.log(
                     logging.WARNING,
-                    "WIKIPEDIA_CONTACT_EMAIL is not set. "
+                    "MATHSWITCH_CONTACT_EMAIL is not set. "
                     "Wikipedia article fetching is disabled. "
-                    "Please set WIKIPEDIA_CONTACT_EMAIL at the top of "
+                    "Please set MATHSWITCH_CONTACT_EMAIL at the top of "
                     "source_wikidata.py to enable article fetching.",
                 )
                 _missing_email_logged = True

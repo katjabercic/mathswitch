@@ -15,7 +15,7 @@ import requests
 from concepts.models import Item, Link
 from slurper.models import SlurperRun
 
-from web.settings import WIKIPEDIA_CONTACT_EMAIL
+from web.settings import MATHSWITCH_CONTACT_EMAIL
 
 
 class OeisSlurper:
@@ -27,7 +27,7 @@ class OeisSlurper:
         self.source = Item.Source.OEIS
 
     def fetch_names(self) -> bytes:
-        headers = {"User-Agent": f"MathSwitch/1.0 ({WIKIPEDIA_CONTACT_EMAIL})"}
+        headers = {"User-Agent": f"MathSwitch/1.0 ({MATHSWITCH_CONTACT_EMAIL})"}
         response = requests.get(self.NAMES_URL, headers=headers)
         response.raise_for_status()
         return gzip.decompress(response.content)

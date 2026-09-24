@@ -48,7 +48,7 @@ Finally, populate the database.
     ```bash
     make install-scispacy
     ```
-    then configure your email `WIKIPEDIA_CONTACT_EMAIL` in [source_wikidata.py](web/slurper/source_wikidata.py)
+    then configure your email `MATHSWITCH_CONTACT_EMAIL` in [source_wikidata.py](web/slurper/source_wikidata.py)
     * This is needed
   * Then run the database population (make sure your db is cleared)
 
