@@ -75,7 +75,7 @@ class OeisSlurperTest(TestCase):
 
         self.assertEqual(item.identifier, "A000045")
         self.assertEqual(item.url, "https://oeis.org/A000045")
-        self.assertEqual(item.name, "A000045")
+        self.assertEqual(item.name, "Fibonacci numbers")
         self.assertEqual(
             item.description,
             "Fibonacci numbers: a(0) = 0, a(1) = 1, a(n) = a(n-1) + a(n-2).",
@@ -104,6 +104,7 @@ class OeisSlurperTest(TestCase):
 
         self.assertEqual(Item.objects.filter(source=Item.Source.OEIS).count(), 1)
         item = Item.objects.get(source=Item.Source.OEIS, identifier="A000045")
+        self.assertEqual(item.name, "Fibonacci numbers")
         self.assertEqual(
             item.description,
             "Fibonacci numbers: a(0) = 0, a(1) = 1, a(n) = a(n-1) + a(n-2).",
