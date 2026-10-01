@@ -47,7 +47,7 @@ class OeisSlurper:
             source=self.source,
             identifier=identifier,
             url=self.SEQUENCE_URL_PREFIX + identifier,
-            name=identifier,
+            name=self.extract_candidate_name(description) or identifier,
             description=description,
         )
 
@@ -71,8 +71,11 @@ class OeisSlurper:
                 source=self.source, identifier=identifier
             ).first()
             if existing is not None:
+                existing.name = (
+                    self.extract_candidate_name(description) or existing.name
+                )
                 existing.description = description
-                existing.save(update_fields=["description"])
+                existing.save(update_fields=["name", "description"])
                 total_filled += 1
                 continue
 
