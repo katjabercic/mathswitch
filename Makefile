@@ -55,3 +55,6 @@ import-house-of-graphs:
 
 import-oeis:
 	python ./web/manage.py import_oeis
+
+import-mathlib:
+	python ./web/manage.py import_mathlib

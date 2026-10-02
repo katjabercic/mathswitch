@@ -106,6 +106,7 @@ class Item(models.Model):
         LMFDB = "LMF", "The L-functions and modular forms database"
         HOUSE_OF_GRAPHS = "HoG", "House of Graphs"
         OEIS = "OEIS", "OEIS"
+        MATHLIB = "ML", "Mathlib"
 
         @staticmethod
         def key():
@@ -120,6 +121,7 @@ class Item(models.Model):
                 Item.Source.LMFDB,
                 Item.Source.HOUSE_OF_GRAPHS,
                 Item.Source.OEIS,
+                Item.Source.MATHLIB,
             ]
             return lambda item: SOURCES.index(item.source)
 

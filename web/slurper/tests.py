@@ -5,7 +5,7 @@ from concepts.models import Item, Link
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
-from slurper import source_house_of_graphs, source_oeis
+from slurper import source_house_of_graphs, source_mathlib, source_oeis
 from slurper.models import SlurperRun
 
 # Run: ./venv/bin/python ./web/manage.py test slurper.tests
@@ -222,3 +222,140 @@ class OeisCommandsTest(TestCase):
 
         self.assertTrue(Item.objects.filter(source=Item.Source.WIKIDATA).exists())
         self.assertFalse(Item.objects.filter(source=Item.Source.OEIS).exists())
+
+
+MATHLIB_INDEX = {
+    "declarations": {
+        "Nat.Prime": {
+            "docLink": "./Mathlib/Data/Nat/Prime/Defs.html#Nat.Prime",
+            "kind": "def",
+        },
+        "Nat.Prime.two_le": {
+            "docLink": "./Mathlib/Data/Nat/Prime/Defs.html#Nat.Prime.two_le",
+            "kind": "theorem",
+        },
+        "Nat.instDecidablePrime": {
+            "docLink": "./Mathlib/Data/Nat/Prime/Defs.html#Nat.instDecidablePrime",
+            "kind": "instance",
+        },
+        "Group": {
+            "docLink": "./Mathlib/Algebra/Group/Defs.html#Group",
+            "kind": "class",
+        },
+        "List.splitAt": {
+            "docLink": "./Batteries/Data/List/Basic.html#List.splitAt",
+            "kind": "def",
+        },
+        "Nat": {
+            "docLink": "./Init/Prelude.html#Nat",
+            "kind": "inductive",
+        },
+    },
+    "instances": {},
+    "instancesFor": {},
+    "modules": {},
+}
+
+
+class MathlibSlurperTest(TestCase):
+    def included(self, slurper):
+        return {name for name, _ in slurper.iter_declarations(MATHLIB_INDEX)}
+
+    def test_default_filter_keeps_only_mathlib_concept_kinds(self):
+        self.assertEqual(
+            self.included(source_mathlib.MathlibSlurper()), {"Nat.Prime", "Group"}
+        )
+
+    def test_filter_can_be_extended_to_other_packages(self):
+        slurper = source_mathlib.MathlibSlurper(packages={"Mathlib", "Batteries"})
+
+        self.assertEqual(self.included(slurper), {"Nat.Prime", "Group", "List.splitAt"})
+
+    def test_declaration_to_item_maps_fields(self):
+        item = source_mathlib.MATHLIB_SLURPER.declaration_to_item(
+            "Nat.Prime", MATHLIB_INDEX["declarations"]["Nat.Prime"]
+        )
+
+        self.assertEqual(item.source, Item.Source.MATHLIB)
+        self.assertEqual(item.identifier, "Nat.Prime")
+        self.assertEqual(
+            item.url,
+            "https://leanprover-community.github.io/mathlib4_docs/"
+            "Mathlib/Data/Nat/Prime/Defs.html#Nat.Prime",
+        )
+        self.assertEqual(item.name, "Nat.Prime")
+        self.assertEqual(item.meta, "def")
+
+    @patch(
+        "slurper.source_mathlib.MATHLIB_SLURPER.fetch_index",
+        return_value=MATHLIB_INDEX,
+    )
+    def test_save_items_creates_items_without_duplicates(self, mock_fetch_index):
+        source_mathlib.MATHLIB_SLURPER.save_items(force=True)
+        source_mathlib.MATHLIB_SLURPER.save_items(force=True)
+
+        self.assertEqual(
+            set(
+                Item.objects.filter(source=Item.Source.MATHLIB).values_list(
+                    "identifier", flat=True
+                )
+            ),
+            {"Nat.Prime", "Group"},
+        )
+        self.assertEqual(Item.objects.filter(source=Item.Source.MATHLIB).count(), 2)
+
+    @patch("slurper.source_mathlib.MATHLIB_SLURPER.fetch_index")
+    def test_throttle_blocks_without_force(self, mock_fetch_index):
+        SlurperRun.objects.create(
+            source=Item.Source.MATHLIB, last_succeeded_at=timezone.now()
+        )
+
+        source_mathlib.MATHLIB_SLURPER.save_items()
+
+        mock_fetch_index.assert_not_called()
+
+    @patch(
+        "slurper.source_mathlib.MATHLIB_SLURPER.fetch_index",
+        return_value=MATHLIB_INDEX,
+    )
+    def test_force_bypasses_throttle(self, mock_fetch_index):
+        SlurperRun.objects.create(
+            source=Item.Source.MATHLIB, last_succeeded_at=timezone.now()
+        )
+
+        source_mathlib.MATHLIB_SLURPER.save_items(force=True)
+
+        mock_fetch_index.assert_called_once()
+
+
+class MathlibCommandsTest(TestCase):
+    @patch("slurper.source_mathlib.MATHLIB_SLURPER.save_items")
+    def test_import_mathlib_calls_slurper(self, mock_save_items):
+        call_command("import_mathlib")
+
+        mock_save_items.assert_called_once_with(force=False)
+
+    @patch("slurper.source_mathlib.MATHLIB_SLURPER.save_items")
+    def test_import_mathlib_with_force(self, mock_save_items):
+        call_command("import_mathlib", "--force")
+
+        mock_save_items.assert_called_once_with(force=True)
+
+    def test_clear_mathlib_removes_only_mathlib_items(self):
+        Item.objects.create(
+            source=Item.Source.WIKIDATA,
+            identifier="wd-1",
+            url="https://example.com/wd-1",
+            name="Wikidata item",
+        )
+        Item.objects.create(
+            source=Item.Source.MATHLIB,
+            identifier="Nat.Prime",
+            url="https://example.com/Nat.Prime",
+            name="Nat.Prime",
+        )
+
+        call_command("clear_mathlib", "--force")
+
+        self.assertTrue(Item.objects.filter(source=Item.Source.WIKIDATA).exists())
+        self.assertFalse(Item.objects.filter(source=Item.Source.MATHLIB).exists())
