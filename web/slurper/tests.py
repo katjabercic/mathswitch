@@ -5,7 +5,13 @@ from concepts.models import Item, Link
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
-from slurper import source_house_of_graphs, source_mathlib, source_oeis
+from psycopg.sql import Composable
+from slurper import (
+    source_house_of_graphs,
+    source_lmfdb,
+    source_mathlib,
+    source_oeis,
+)
 from slurper.models import SlurperRun
 
 # Run: ./venv/bin/python ./web/manage.py test slurper.tests
@@ -359,3 +365,20 @@ class MathlibCommandsTest(TestCase):
 
         self.assertTrue(Item.objects.filter(source=Item.Source.WIKIDATA).exists())
         self.assertFalse(Item.objects.filter(source=Item.Source.MATHLIB).exists())
+
+
+class LmfdbSlurperTest(TestCase):
+    def test_fetch_rows_uses_psycopg3_sql(self):
+        # psycodict >= 1.0 only accepts psycopg (3) queries.
+        cursor = Mock()
+        cursor.description = [("id",), ("title",), ("content",)]
+        cursor.__iter__ = Mock(return_value=iter([("a.b", "A B", "text")]))
+        lmf = Mock()
+        lmf.db._execute.return_value = cursor
+
+        with patch.dict("sys.modules", {"lmf": lmf}):
+            rows = list(source_lmfdb.LMFDB_SLURPER.fetch_rows())
+
+        query = lmf.db._execute.call_args.args[0]
+        self.assertIsInstance(query, Composable)
+        self.assertEqual(rows, [{"id": "a.b", "title": "A B", "content": "text"}])
