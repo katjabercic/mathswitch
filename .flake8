@@ -1,3 +1,5 @@
 [flake8]
-exclude = experiments,migrations,settings.py,venv/
+exclude = experiments,migrations,settings.py,venv/,mathswitch-filter-test/data
 max-line-length = 88
+per-file-ignores =
+    mathswitch-filter-test/report.py: E501
