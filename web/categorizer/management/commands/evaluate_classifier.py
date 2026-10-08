@@ -1,15 +1,22 @@
 # Requirements: matplotlib, scikit-learn
-# Install: pip install matplotlib scikit-learn
+# Install: make install-categorizer
 
 import json
 import os
 
-import matplotlib.pyplot as plt
-import numpy as np
 from concepts.models import CategorizerResult, Item
 from django.core.management.base import BaseCommand
-from sklearn.calibration import calibration_curve
-from sklearn.metrics import auc, precision_recall_curve, roc_curve
+
+try:
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from sklearn.calibration import calibration_curve
+    from sklearn.metrics import auc, precision_recall_curve, roc_curve
+except ImportError:
+    raise ImportError(
+        "matplotlib and scikit-learn packages are required. "
+        "Install the categorizer dependencies with: make install-categorizer"
+    )
 
 
 def aggregate_item_predictions(results):

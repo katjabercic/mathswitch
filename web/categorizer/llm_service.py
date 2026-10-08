@@ -113,7 +113,8 @@ class LLMService:
             import openai
         except ImportError:
             raise ImportError(
-                "openai package is required. Install it with: pip install openai"
+                "openai package is required. "
+                "Install it with: make install-categorizer-paid"
             )
 
         api_key = os.getenv("OPENAI_API_KEY")
@@ -144,7 +145,8 @@ class LLMService:
             import anthropic
         except ImportError:
             raise ImportError(
-                "anthropic package is required. Install it with: pip install anthropic"
+                "anthropic package is required. "
+                "Install it with: make install-categorizer-paid"
             )
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -183,7 +185,7 @@ class LLMService:
         except ImportError:
             raise ImportError(
                 "langchain-huggingface package is required. "
-                "Install it with: pip install langchain-huggingface"
+                "Install it with: make install-categorizer"
             )
 
         self.logger.info(f"Loading HuggingFace model: {model_id}")
@@ -256,7 +258,7 @@ class LLMService:
         except ImportError:
             raise ImportError(
                 "langchain-community package is required. "
-                "Install it with: pip install langchain-community"
+                "Install it with: make install-categorizer"
             )
 
         # Allow model override via environment variable

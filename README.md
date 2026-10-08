@@ -18,12 +18,26 @@ a provided `.env.example` config and Docker compose to run the database:
 docker compose up -d
 ```
 
-To install all the necessary Python packages, run:
+Dependencies are split into groups in [pyproject.toml](pyproject.toml) (`[dependency-groups]`, PEP 735),
+so that you only install what you need. Installing a group needs pip >= 25.1 (`make prepare-venv` upgrades pip).
+
+| Group | What it is for | Install |
+|---|---|---|
+| `prod` | bare minimum to run the web app | `make install-prod` |
+| `slurper` | populating the database (`import_*` commands, spaCy keywords, LMFDB) | `make install-slurper` |
+| `categorizer` | LLM categorizer with local models (torch, transformers, ...) and classifier evaluation | `make install-categorizer` |
+| `categorizer-paid` | optional OpenAI / Anthropic clients for the categorizer | `make install-categorizer-paid` |
+| `dev` | linters, formatters and test dependencies | `make install-dev` |
+
+`make install-all` installs everything except the paid APIs. You can also install groups directly,
+e.g. `pip install --group prod --group slurper`, or with uv: `uv sync --group slurper`.
+
+To install the web app, run:
 
 ```bash
 make prepare-web # Which does the necessary steps for env, db, superuser
 # OR
-pip install -r web/requirements.txt
+make install-prod
 ```
 
 Prepare an environment:
@@ -44,11 +58,12 @@ python web/manage.py createsuperuser
 ```
 
 Finally, populate the database.
-  * In order to fetch wikipedia articles and extract keywords from them:
+  * In order to fetch wikipedia articles and extract keywords from them, install the slurper
+    dependencies (this also downloads the scispacy model):
     ```bash
-    make install-scispacy
+    make install-slurper
     ```
-    then configure your email `MATHSWITCH_CONTACT_EMAIL` in [source_wikidata.py](web/slurper/source_wikidata.py)
+    then configure your email `MATHSWITCH_CONTACT_EMAIL` in [.env](web/.env)
     * This is needed
   * Then run the database population (make sure your db is cleared)
 
@@ -73,6 +88,15 @@ The categorizer is setup to work with several models, divided into free and paid
 All of them are run locally, so expect some performance hits. The models are downloaded when the categorizer is
 ran initially, and by default the free models are used.
 
+Install its dependencies first:
+```bash
+make install-categorizer
+```
+If you don't need a GPU, the CPU-only torch wheels are much smaller. Install them before the group:
+```bash
+pip install torch~=2.9.0 --index-url https://download.pytorch.org/whl/cpu
+```
+
 The database needs to be filled in before running it, so:
 ```bash
 make populate-db
@@ -89,7 +113,7 @@ For more details see [categorizer readme](web/categorizer/README.md).
 
 ## Notes for developers
 
-In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter.
+In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter (together with everything needed to run the tests).
 ```bash
 make install-dev
 ```

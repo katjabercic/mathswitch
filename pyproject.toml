@@ -1,3 +1,58 @@
+[project]
+name = "mathswitch"
+version = "0.1.0"
+requires-python = ">=3.12"
+# Not an installable package: dependencies live in the groups below.
+# Install a group with `pip install --group <name>` (pip >= 25.1) or `uv sync --group <name>`.
+dependencies = []
+
+[dependency-groups]
+# Bare minimum to run the web app.
+prod = [
+    "Django~=4.2.6",
+    "psycopg2-binary~=2.9.11",
+    "python-decouple~=3.8",
+    "unidecode~=1.4.0",
+]
+# Populating the database (`import_*` management commands).
+# Also requires the scispacy model: `make install-scispacy`.
+slurper = [
+    { include-group = "prod" },
+    "requests~=2.32.5",
+    "spacy~=3.7.0",
+    "scispacy~=0.6.2",
+    "lmfdb-lite[pgbinary] @ git+https://github.com/roed314/lmfdb-lite.git",
+]
+# LLM categorizer with free local models, plus classifier evaluation.
+categorizer = [
+    { include-group = "prod" },
+    "requests~=2.32.5",
+    "langchain-huggingface==0.3.1", # HuggingFace models
+    "langchain-community==0.3.27",  # Ollama and other local models
+    "transformers~=4.57.0",
+    "torch~=2.9.0",
+    "accelerate~=1.12.0",           # Speeds up model loading
+    "matplotlib~=3.10.0",           # Classifier evaluation
+    "scikit-learn~=1.7.0",          # Classifier evaluation
+]
+# Paid LLM APIs for the categorizer (optional).
+categorizer-paid = [
+    "openai>=1.0.0",
+    "anthropic>=0.7.0",
+]
+# Running the test suite.
+test = [
+    { include-group = "prod" },
+    "requests~=2.32.5",
+]
+# Linters and formatters, plus everything needed for tests.
+dev = [
+    { include-group = "test" },
+    "black~=25.9.0",
+    "isort~=7.0.0",
+    "flake8~=7.3.0",
+]
+
 [tool.black]
 extend-exclude = 'migrations'
 target-version = ['py312']
