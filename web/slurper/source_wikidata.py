@@ -249,7 +249,7 @@ ORDER BY ?item
                     "MATHSWITCH_CONTACT_EMAIL is not set. "
                     "Wikipedia article fetching is disabled. "
                     "Please set MATHSWITCH_CONTACT_EMAIL at the top of "
-                    "source_wikidata.py to enable article fetching.",
+                    "web/.env to enable article fetching.",
                 )
                 _missing_email_logged = True
             return None
