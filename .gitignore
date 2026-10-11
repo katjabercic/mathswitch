@@ -4,6 +4,3 @@ __pycache__
 **/*.sqlite3
 **/.env
 ./web/classifier_reports
-mathlib-declarations*.json
-mathswitch-filter-test/data/
-mathswitch-filter-test/report/

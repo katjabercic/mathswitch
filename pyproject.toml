@@ -55,10 +55,10 @@ dev = [
 ]
 
 [tool.black]
-extend-exclude = 'migrations|mathswitch-filter-test/data'
+extend-exclude = 'migrations'
 target-version = ['py312']
 
 [tool.isort]
-extend_skip_glob = ["*/migrations/*", "mathswitch-filter-test/data/*"]
+extend_skip_glob = ["*/migrations/*"]
 profile = "black"
 py_version = 312
