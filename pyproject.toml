@@ -44,6 +44,7 @@ categorizer-paid = [
 test = [
     { include-group = "prod" },
     "requests~=2.32.5",
+    "psycopg[binary]~=3.3",
 ]
 # Linters and formatters, plus everything needed for tests.
 dev = [
