@@ -6,26 +6,26 @@ The categorizer module provides LLM-powered categorization of mathematical conce
 
 ### 1. Install Required Dependencies
 
+The categorizer dependencies are a separate group in `pyproject.toml`, so they are not
+installed for the web app.
+
 **For FREE local models (recommended):**
 ```bash
-make install
+make install-categorizer
+```
+Without a GPU, install the much smaller CPU-only torch wheels first:
+```bash
+pip install torch~=2.9.0 --index-url https://download.pytorch.org/whl/cpu
 ```
 
-**For paid API models (optional):**
-
-For OpenAI:
+**For paid API models (optional, OpenAI and Anthropic Claude):**
 ```bash
-pip install openai
-```
-
-For Anthropic Claude:
-```bash
-pip install anthropic
+make install-categorizer-paid
 ```
 
 **For Ollama (free local alternative):**
 1. Install Ollama: https://ollama.com/download
-2. Install langchain-community: `pip install langchain-community`
+2. Install langchain-community (part of the categorizer group): `make install-categorizer`
 3. Pull the models you want to use:
 ```bash
 ollama pull deepseek-r1:14b

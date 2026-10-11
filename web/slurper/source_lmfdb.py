@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from concepts.models import Item
 from django.db.utils import IntegrityError
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 from slurper.models import SlurperRun
 
 
