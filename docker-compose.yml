@@ -1,5 +1,6 @@
 volumes:
   postgres_data:
+  static:
 
 services:
   db:
@@ -11,6 +12,50 @@ services:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # The full app stack (gunicorn + nginx) is opt-in, so that `docker compose up -d`
+  # still only starts the database for local development. Start everything with
+  # `docker compose --profile app up -d` (or set COMPOSE_PROFILES=app).
+  web:
+    build:
+      context: .
+      args:
+        WITH_TORCH: ${WITH_TORCH:-true}
+        WITH_SCISPACY_MODEL: ${WITH_SCISPACY_MODEL:-true}
+    env_file:
+      - ./web/.env
+    environment:
+      # Inside the compose network the database is reachable as `db`,
+      # regardless of what POSTGRES_HOST is set to for local development.
+      USE_POSTGRES: "True"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      STATIC_ROOT: /static
+    volumes:
+      - static:/static
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    expose:
+      - "8000"
     profiles:
-      - ''
-      - db
+      - app
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - static:/static:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+    restart: unless-stopped
+    profiles:
+      - app
