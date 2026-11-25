@@ -2,12 +2,12 @@
 Slurper for the On-Line Encyclopedia of Integer Sequences (OEIS).
 
 Sequence names are fetched from the OEIS names.gz dump and from searches like
-https://oeis.org/search?q=keyword%3Acore&fmt=json&sort=number&start=100. 
+https://oeis.org/search?q=keyword%3Acore&fmt=json&sort=number&start=100.
 From start= 0 to 100. Each request gives you 10 items, so we increase by 10.
 110 does not work for anonymus users. To get around it we sort first by
 sort=numbers and then sort=-umbers. This way we can get all 183 core items
 
-OEIS content is licensed under CC-BY-SA-4.0 by The On-Line Encyclopedia 
+OEIS content is licensed under CC-BY-SA-4.0 by The On-Line Encyclopedia
 of Integer Sequences, https://oeis.org/.
 """
 
@@ -50,9 +50,9 @@ class OeisSlurper:
         return gzip.decompress(self._get(self.NAMES_URL).content)
 
     def fetch_core_ids(self) -> set[str]:
-        # Curently anonymus useres get a 100 items result limit. 
-        # There are curently (25.11.2026) 183 sequences with core keyword, 
-        # we get the first 100 and the last 100. TAlternative is to parse thru 
+        # Curently anonymus useres get a 100 items result limit.
+        # There are curently (25.11.2026) 183 sequences with core keyword,
+        # we get the first 100 and the last 100. TAlternative is to parse thru
         # oesisdata repository at https://github.com/oeis/oeisdata/tree/main.
         lowest_numbered = self._search_sequences("keyword:core", sort="number")
         highest_numbered = self._search_sequences("keyword:core", sort="-number")
@@ -181,12 +181,9 @@ class OeisSlurper:
             f"{counts['links']} NAME_EQ links created."
         )
 
-
-
     def _load_existing_items(self) -> dict[str, Item]:
         return {
-            item.identifier: item
-            for item in Item.objects.filter(source=self.source)
+            item.identifier: item for item in Item.objects.filter(source=self.source)
         }
 
     def _load_other_sources_items_by_name(self) -> dict[str, list[Item]]:
