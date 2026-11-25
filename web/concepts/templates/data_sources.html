@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Data sources and licenses</h2>
+<p>Mathswitch is an academic, non-profit research project. We collect names, short descriptions,
+identifiers and links of mathematical concepts from the sources below, and use them to build a
+knowledge graph that connects the same concept appearing in different sources.
+Every entry on this site links back to its original page in the source.
+All content remains the work of the respective authors and is used under the licenses listed below.</p>
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>What we use</th><th>License</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://www.wikidata.org/">Wikidata</a></td>
+      <td>Item identifiers, labels, descriptions, aliases and links to other sources</td>
+      <td><a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a>
+        (<a href="https://www.wikidata.org/wiki/Wikidata:Copyright">terms</a>)</td>
+    </tr>
+    <tr>
+      <td><a href="https://en.wikipedia.org/">Wikipedia (EN)</a></td>
+      <td>Article titles and plain-text article extracts</td>
+      <td><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+        (<a href="https://en.wikipedia.org/wiki/Wikipedia:Copyrights">terms</a>)</td>
+    </tr>
+    <tr>
+      <td><a href="https://oeis.org/">The On-Line Encyclopedia of Integer Sequences (OEIS)</a></td>
+      <td>Sequence identifiers and names</td>
+      <td><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+        (<a href="https://oeis.org/wiki/The_OEIS_End-User_License_Agreement">terms</a>)</td>
+    </tr>
+    <tr>
+      <td><a href="https://unimath.github.io/agda-unimath/">Agda Unimath</a></td>
+      <td>Concept index (names and links)</td>
+      <td><a href="https://github.com/UniMath/agda-unimath/blob/master/LICENSE.md">MIT License</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://www.lmfdb.org/">LMFDB</a></td>
+      <td>Knowl identifiers, titles and contents</td>
+      <td>See the <a href="https://www.lmfdb.org/license">LMFDB license</a>
+        and <a href="https://www.lmfdb.org/citation">citation</a> pages</td>
+    </tr>
+    <tr>
+      <td><a href="https://houseofgraphs.org/">House of Graphs</a></td>
+      <td>Invariant names and definitions</td>
+      <td>Used with attribution to <a href="https://houseofgraphs.org/">House of Graphs</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://ncatlab.org/">nLab</a>,
+        <a href="https://mathworld.wolfram.com/">MathWorld</a>,
+        <a href="https://proofwiki.org/">ProofWiki</a>,
+        <a href="https://encyclopediaofmath.org/">Encyclopedia of Mathematics</a></td>
+      <td>Links only (identifiers obtained from Wikidata); no content is copied</td>
+      <td>&mdash;</td>
+    </tr>
+  </tbody>
+</table>
+
+{% comment %}
+TODO: if/when a dump of the knowledge graph is published, license it under CC BY-SA 4.0
+if it contains Wikipedia or OEIS text (share-alike); a dump with only identifiers and
+links can be CC0. Document the dump license on this page.
+{% endcomment %}
+
+<p>If you maintain one of these sources and have concerns about how your data is used,
+please <a href="https://github.com/katjabercic/mathswitch/issues">open an issue</a>.</p>
+{% endblock %}
