@@ -4,3 +4,4 @@ __pycache__
 **/*.sqlite3
 **/.env
 ./web/classifier_reports
+.DS_Store

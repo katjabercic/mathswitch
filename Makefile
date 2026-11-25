@@ -55,3 +55,26 @@ import-house-of-graphs:
 
 import-oeis:
 	python ./web/manage.py import_oeis
+
+# Docker (full app stack: postgres + gunicorn + nginx)
+# Build without torch / the scispaCy model with e.g. `make docker-build WITH_TORCH=false`.
+
+DOCKER_COMPOSE := docker compose --profile app
+
+docker-build:
+	WITH_TORCH=$(or $(WITH_TORCH),true) WITH_SCISPACY_MODEL=$(or $(WITH_SCISPACY_MODEL),true) $(DOCKER_COMPOSE) build
+
+docker-up:
+	$(DOCKER_COMPOSE) up -d
+
+docker-down:
+	$(DOCKER_COMPOSE) down
+
+docker-logs:
+	$(DOCKER_COMPOSE) logs -f
+
+docker-createsuperuser:
+	$(DOCKER_COMPOSE) exec web python manage.py createsuperuser
+
+docker-rebuild-db:
+	$(DOCKER_COMPOSE) exec web python manage.py rebuild_db

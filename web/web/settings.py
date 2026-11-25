@@ -29,7 +29,7 @@ SECRET_KEY = config(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 USE_POSTGRES = config("USE_POSTGRES", default=False, cast=bool)
 
@@ -48,7 +48,7 @@ IS_POSTGRES_CONFIGURED = all(
     ]
 )
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
 
 
 # Application definition
@@ -156,7 +156,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-STATIC_ROOT = "/var/www/mathswitch/static"
+STATIC_ROOT = config("STATIC_ROOT", default="/var/www/mathswitch/static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

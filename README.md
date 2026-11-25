@@ -87,6 +87,49 @@ and returning the same prompt, then few times `---\n\n\n---`.
 
 For more details see [categorizer readme](web/categorizer/README.md).
 
+## Running the full stack with Docker
+
+The repository also ships a Docker setup for the whole app: Postgres, the
+Django app under gunicorn, and nginx serving static files. These services
+are behind the `app` compose profile, so plain `docker compose up -d` still
+only starts the database.
+
+```bash
+cp web/.env.example web/.env
+# Edit web/.env: SECRET_KEY, DEBUG=False, ALLOWED_HOSTS, MATHSWITCH_CONTACT_EMAIL, Postgres credentials
+make docker-build   # or: docker compose --profile app build
+make docker-up      # or: docker compose --profile app up -d
+```
+
+The site is then available at `http://localhost` (set `HTTP_PORT` to use another port).
+Migrations and `collectstatic` run automatically when the `web` container starts.
+
+The image includes torch (CPU-only) and the scispaCy model by default. Both are
+large and only needed for the categorizer and for Wikipedia keyword extraction,
+so they can be left out:
+
+```bash
+make docker-build WITH_TORCH=false WITH_SCISPACY_MODEL=false
+```
+
+To populate the database and create an admin user:
+
+```bash
+make docker-rebuild-db
+make docker-createsuperuser
+```
+
+Any other management command runs the same way, e.g.
+`docker compose --profile app exec web python manage.py import_oeis`.
+
+To update a running deployment:
+
+```bash
+git pull
+make docker-build
+make docker-up
+```
+
 ## Notes for developers
 
 In order to contribute, install [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) autoformatters and [Flake8](https://flake8.pycqa.org/) linter.
