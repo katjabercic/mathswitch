@@ -1,5 +1,0 @@
-curl -G 'https://query.wikidata.org/sparql' \
-    --data-urlencode 'format=json' \
-    --data-urlencode 'query=SELECT DISTINCT ?item ?itemLabel ?itemDescription ?image ?wp_en (GROUP_CONCAT(DISTINCT ?itemAltLabel; separator=", ") AS ?aliases) ?nlabID ?mwID ?pwID ?eomID WHERE { ?item wdt:P31 ?topic . ?topic wdt:P2579 wd:Q395 . OPTIONAL { ?item wdt:P4215 ?nlabID . } OPTIONAL { ?item wdt:P2812 ?mwID . } OPTIONAL { ?item wdt:P6781 ?pwID . } OPTIONAL { ?item wdt:P7554 ?eomID . } OPTIONAL { ?item wdt:P18 ?image . } OPTIONAL { ?wp_en rdf:type schema:Article; schema:isPartOf <https://en.wikipedia.org/>; schema:about ?item . } OPTIONAL { ?item skos:altLabel ?itemAltLabel . FILTER (lang(?itemAltLabel) = "en") } FILTER NOT EXISTS { VALUES ?excludedType { wd:Q21199 wd:Q28920044 wd:Q6256 wd:Q714737 } ?item wdt:P31 ?excludedType . } FILTER NOT EXISTS { ?item wdt:P31 wd:Q5 . } SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } } GROUP BY ?item ?itemLabel ?itemDescription ?image ?wp_en ?nlabID ?mwID ?pwID ?eomID ORDER BY ?item LIMIT 1' \
-    -H 'Accept: application/json' \
-    -H 'User-Agent: MathSwitch/1.0 (bobansta@gmail.com)'
