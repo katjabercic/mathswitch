@@ -1,5 +1,6 @@
 volumes:
   postgres_data:
+  pgvector_data:
 
 services:
   db:
@@ -14,3 +15,24 @@ services:
     profiles:
       - ''
       - db
+
+  vectordb:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    env_file:
+      - ./web/.env
+    # the image reads POSTGRES_*, so map the PGVECTOR_* values from web/.env
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        POSTGRES_DB="$$PGVECTOR_DB"
+        POSTGRES_USER="$$PGVECTOR_USER"
+        POSTGRES_PASSWORD="$$PGVECTOR_PASSWORD"
+        exec docker-entrypoint.sh postgres
+    ports:
+      - '${PGVECTOR_PORT:-5433}:5432'
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    profiles:
+      - vectordb
