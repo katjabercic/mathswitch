@@ -48,6 +48,22 @@ IS_POSTGRES_CONFIGURED = all(
     ]
 )
 
+# Optional pgvector database, used only by the categorizer app
+PGVECTOR_DB = config("PGVECTOR_DB", default=None)
+PGVECTOR_USER = config("PGVECTOR_USER", default=None)
+PGVECTOR_PASSWORD = config("PGVECTOR_PASSWORD", default=None)
+PGVECTOR_HOST = config("PGVECTOR_HOST", default=None)
+PGVECTOR_PORT = config("PGVECTOR_PORT", default="5432")
+
+IS_PGVECTOR_CONFIGURED = all(
+    [
+        PGVECTOR_DB,
+        PGVECTOR_USER,
+        PGVECTOR_PASSWORD,
+        PGVECTOR_HOST,
+    ]
+)
+
 ALLOWED_HOSTS = ["*"]
 
 
@@ -118,6 +134,18 @@ if USE_POSTGRES and IS_POSTGRES_CONFIGURED:
             "PORT": POSTGRES_PORT,
         }
     }
+
+if IS_PGVECTOR_CONFIGURED:
+    DATABASES["vectors"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": PGVECTOR_DB,
+        "USER": PGVECTOR_USER,
+        "PASSWORD": PGVECTOR_PASSWORD,
+        "HOST": PGVECTOR_HOST,
+        "PORT": PGVECTOR_PORT,
+    }
+
+DATABASE_ROUTERS = ["categorizer.db_router.VectorRouter"]
 
 
 # Password validation
