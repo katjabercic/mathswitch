@@ -4,3 +4,5 @@ __pycache__
 **/*.sqlite3
 **/.env
 ./web/classifier_reports
+.claude/settings.local.json
+test-local*.sh
