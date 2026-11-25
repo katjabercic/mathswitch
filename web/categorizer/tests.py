@@ -1,54 +1,34 @@
-import json
+from unittest.mock import MagicMock, patch
 
-from categorizer.wikidata_fetch_service import WikidataFetchService
+from categorizer.wikidata_fetch_service import WIKIDATA_API_URL, WikidataFetchService
 from django.test import TestCase
+
+ENTITY_ID = "Q2261345"
+ENTITY = {
+    "id": ENTITY_ID,
+    "labels": {"en": {"language": "en", "value": "example concept"}},
+    "descriptions": {"en": {"language": "en", "value": "example description"}},
+    "claims": {
+        "P4215": [{"mainsnak": {"datavalue": {"value": "example+concept"}}}],
+    },
+    "sitelinks": {"enwiki": {"site": "enwiki", "title": "Example concept"}},
+}
 
 
 class WikidataFetchServiceTest(TestCase):
-    """
-    Live test against the Wikidata API.
-    Run with: python manage.py test categorizer.tests.WikidataFetchServiceTest
-    """
-
     def setUp(self):
         self.service = WikidataFetchService()
 
-    def test_fetch_entity_q2261345(self):
-        """Fetch Q2261345 and print the response for inspection."""
-        entity_id = "Q2261345"
-        entity = self.service.fetch_entity(entity_id)
+    @patch("categorizer.wikidata_fetch_service.requests.get")
+    def test_fetch_entity(self, mock_get):
+        response = MagicMock(status_code=200)
+        response.json.return_value = {"entities": {ENTITY_ID: ENTITY}}
+        mock_get.return_value = response
 
-        self.assertIsNotNone(entity, "Expected entity data, got None")
+        entity = self.service.fetch_entity(ENTITY_ID)
 
-        # Basic structure
-        self.assertIn("labels", entity)
-        self.assertIn("descriptions", entity)
-        self.assertIn("claims", entity)
-        self.assertIn("sitelinks", entity)
-
-        # Print for inspection
-        print(f"\n{'=' * 60}")
-        print(f"Entity: {entity_id}")
-        print(f"{'=' * 60}")
-
-        label = entity["labels"].get("en", {}).get("value")
-        print(f"Label: {label}")
-
-        description = entity["descriptions"].get("en", {}).get("value")
-        print(f"Description: {description}")
-
-        print(f"\nClaims ({len(entity['claims'])} properties):")
-        for prop_id, claims in entity["claims"].items():
-            values = []
-            for claim in claims:
-                mainsnak = claim.get("mainsnak", {})
-                datavalue = mainsnak.get("datavalue", {})
-                values.append(datavalue.get("value", "N/A"))
-            print(f"  {prop_id}: {values}")
-
-        print(f"\nSitelinks ({len(entity['sitelinks'])} wikis):")
-        for site, link in entity["sitelinks"].items():
-            print(f"  {site}: {link['title']}")
-
-        print(f"\n{'=' * 60}")
-        print(f"Full JSON:\n{json.dumps(entity, indent=2)[:3000]}")
+        self.assertEqual(entity, ENTITY)
+        args, kwargs = mock_get.call_args
+        self.assertEqual(args[0], WIKIDATA_API_URL)
+        self.assertEqual(kwargs["params"]["action"], "wbgetentities")
+        self.assertEqual(kwargs["params"]["ids"], ENTITY_ID)
