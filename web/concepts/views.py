@@ -63,6 +63,10 @@ def home(request):
     return render(request, "index.html", context)
 
 
+def data_sources(request):
+    return render(request, "data_sources.html")
+
+
 def search(request):
     search_value = request.GET.get("q") or ""
     slug = normalize_concept_name(search_value)
