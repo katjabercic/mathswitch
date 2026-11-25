@@ -47,6 +47,12 @@ create-migrations:
 migrate:
 	python ./web/manage.py migrate
 
+create-vectordb-migrations:
+	python ./web/manage.py makemigrations categorizer
+
+migrate-vectordb:
+	python ./web/manage.py migrate --database=vectors
+
 import-lmfdb:
 	python ./web/manage.py import_lmfdb
 
